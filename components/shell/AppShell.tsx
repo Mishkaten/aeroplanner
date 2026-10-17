@@ -73,7 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {NAV.map(({ id, label, href, Icon }) => {
             const n = badges[id];
             return (
-              <Link key={id} href={href} className="navb" aria-current={isCurrent(href) ? "page" : undefined}>
+              <Link key={id} href={href} prefetch={false} className="navb" aria-current={isCurrent(href) ? "page" : undefined}>
                 <Icon size={16} aria-hidden="true" />
                 <span className="nl">{label}</span>
                 {n !== undefined && n > 0 && (
