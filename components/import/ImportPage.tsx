@@ -54,7 +54,7 @@ export function ImportPage() {
 
   const loadSample = async () => {
     try {
-      const res = await fetch(`/${SAMPLE_FILE}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/${SAMPLE_FILE}`);
       if (!res.ok) throw new Error(String(res.status));
       await useImport.getState().start(await res.arrayBuffer(), SAMPLE_FILE);
     } catch {
