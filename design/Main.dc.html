@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AeroPlanner</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.app{--acc:var(--acc-l);--bg:#F3F4F1;--panel:#FFFFFF;--panel2:#F8F9F6;--line:#D8DCD4;--line2:#E8EBE5;--ink:#14202E;--mut:#505D6D;--nav:#0B1F3A;--nav2:#13294A;--navink:#C3D1E6;--acc-soft:#E3ECFB;--ok-bg:#DDF1E4;--ok:#14633A;--wa-bg:#FAEAC4;--wa:#734900;--er-bg:#FADFDB;--er:#9E1F18;--urg-bg:#B3261E;--urg:#FFFFFF;--gr-bg:#E4E7E2;--gr:#46525F;--hatch1:#E9E5D6;--hatch2:#D5CFBA;--shadow:0 8px 28px rgba(11,31,58,.18);display:flex;min-height:100vh;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13.5px;line-height:1.4;outline:none}
+.app[data-theme=dark]{--acc:#7BA8FF;--bg:#0B1420;--panel:#122033;--panel2:#0E1A2B;--line:#26384F;--line2:#1C2B3F;--ink:#E7EDF5;--mut:#A3B3C8;--nav:#050D19;--nav2:#0E1B30;--navink:#A9BAD2;--acc-soft:#17305A;--ok-bg:#12382A;--ok:#7FDBA6;--wa-bg:#46350D;--wa:#F2C768;--er-bg:#4A1C1A;--er:#FF9D94;--urg-bg:#E5483D;--urg:#FFFFFF;--gr-bg:#25354A;--gr:#B3C0D1;--hatch1:#2A3140;--hatch2:#1B2230;--shadow:0 8px 28px rgba(0,0,0,.5)}
+.app *{box-sizing:border-box}
+.app button,.app input,.app select,.app textarea{font:inherit;color:inherit}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.side{width:228px;flex:none;background:var(--nav);color:var(--navink);display:flex;flex-direction:column;gap:2px;padding:14px 10px;position:sticky;top:0;align-self:flex-start;min-height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 10px 18px;color:#fff}
+.brand b{font-size:16px;letter-spacing:.02em}
+.brand small{display:block;font-size:11px;color:var(--navink);letter-spacing:.06em;text-transform:uppercase}
+.navb{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-radius:6px;padding:9px 10px;color:var(--navink);cursor:pointer;text-align:left;font-weight:500}
+.navb:hover{background:var(--nav2);color:#fff}
+.navb.on{background:var(--nav2);color:#fff;box-shadow:inset 3px 0 0 #6FA1FF}
+.navb .cnt{margin-left:auto;background:#D93A2E;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;font-weight:700;line-height:18px}
+.ico{width:16px;height:16px;flex:none;border:1.6px solid currentColor;border-radius:4px;opacity:.9}
+.sidefoot{margin-top:auto;padding:10px;font-size:11.5px;color:var(--navink);border-top:1px solid #20365A}
+.main{flex:1 1 560px;min-width:0;display:flex;flex-direction:column}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 24px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.utc{display:inline-flex;align-items:center;gap:6px;background:var(--nav);color:#fff;border-radius:5px;padding:5px 10px;font-weight:600;font-size:12px;letter-spacing:.06em}
+.dotg{width:7px;height:7px;border-radius:50%;background:#58D68D}
+.search{flex:1 1 260px;max-width:420px;display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:0 10px;height:34px}
+.search input{border:0;background:none;outline:none;flex:1;min-width:0}
+.kbd{font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--mut);background:var(--panel2)}
+.demo{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--acc-soft);color:var(--ink);padding:6px 24px;font-size:12.5px;border-bottom:1px solid var(--line)}
+.content{padding:20px 24px 48px;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+.head h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-.005em}
+.head p{margin:2px 0 0;color:var(--mut)}
+.grow{flex:1 1 auto}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.pri:hover{filter:brightness(1.08);color:#fff}
+.app[data-theme=dark] .btn.pri{color:#06101F}
+.btn.sm{height:26px;padding:0 9px;font-size:12px}
+.btn.fix{background:var(--acc-soft);border-color:transparent;color:var(--acc);font-weight:600}
+.btn:focus-visible,.navb:focus-visible,.leg:focus-visible,.seg button:focus-visible,.row-click:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:none;padding:0 12px;height:30px;cursor:pointer;font-weight:500;color:var(--mut)}
+.seg button.on{background:var(--acc);color:#fff}
+.app[data-theme=dark] .seg button.on{color:#06101F}
+.inp,.sel{height:32px;border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:0 9px;min-width:0}
+.inp:focus,.sel:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px}
+textarea.inp{height:70px;padding:8px 9px;resize:vertical;width:100%}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.card h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.01em}
+.cardh{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line2)}
+.cardb{padding:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi small{color:var(--mut);font-weight:500}
+.kpi b{font-size:28px;font-weight:600;line-height:1.15}
+.kpi.bad{box-shadow:inset 0 3px 0 var(--urg-bg)}
+.kpi.warn{box-shadow:inset 0 3px 0 #C98A00}
+.b{display:inline-flex;align-items:center;gap:5px;border-radius:4px;padding:1px 7px;font-size:11.5px;font-weight:600;line-height:18px;white-space:nowrap}
+.b::before{content:"";width:9px;height:9px;flex:none;background:currentColor}
+.b-ok{background:var(--ok-bg);color:var(--ok)}.b-ok::before{border-radius:50%}
+.b-pe{background:var(--wa-bg);color:var(--wa)}.b-pe::before{border-radius:50%;background:none;border:2px solid currentColor}
+.b-ur{background:var(--urg-bg);color:var(--urg)}.b-ur::before{clip-path:polygon(50% 0,100% 100%,0 100%)}
+.b-er{background:var(--er-bg);color:var(--er)}.b-er::before{clip-path:polygon(50% 0,100% 100%,0 100%)}
+.b-wa{background:var(--wa-bg);color:var(--wa)}.b-wa::before{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.b-cn{background:var(--gr-bg);color:var(--gr);text-decoration:line-through}.b-cn::before{height:2px;margin-top:1px}
+.b-in{background:var(--acc-soft);color:var(--acc)}.b-in::before{display:none}
+.b-nt{background:var(--gr-bg);color:var(--gr)}.b-nt::before{display:none}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{position:sticky;top:0;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel2);white-space:nowrap}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.tbl tr.row-click{cursor:pointer}
+.tbl tr.row-click:hover td{background:var(--panel2)}
+.scroll{overflow-x:auto}
+.empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:40px 16px;color:var(--mut);text-align:center}
+.empty b{color:var(--ink);font-size:15px}
+.skel{height:14px;border-radius:4px;background:linear-gradient(90deg,var(--line2),var(--line),var(--line2));background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.legs-grid{display:grid;gap:0}
+.leg{position:relative;display:flex;flex-direction:column;gap:3px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:5px;padding:5px 7px;cursor:pointer;text-align:left;width:100%;font-size:12px}
+.leg:hover{border-color:var(--acc);z-index:5}
+.leg.cnl{opacity:.55;border-left-color:var(--gr)}
+.leg.cnl .strike{text-decoration:line-through}
+.leg.sel{background:var(--acc-soft)}
+.leg.hl{outline:2px solid var(--acc);outline-offset:1px}
+.leg.iss{border-left-color:#D93A2E}
+.leg .r1,.leg .r2,.leg .r3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.leg .fn{font-weight:600;font-size:12.5px}
+.leg .pair{color:var(--mut)}
+.plus1{background:var(--nav);color:#fff;border-radius:3px;padding:0 4px;font-size:10.5px;font-weight:700}
+.lt{border:1px solid var(--line);border-radius:3px;padding:0 4px;font-size:10.5px;color:var(--mut)}
+.tip{display:none;position:absolute;left:8px;top:100%;margin-top:4px;z-index:30;background:var(--nav);color:#fff;border-radius:6px;padding:8px 10px;width:250px;box-shadow:var(--shadow);font-size:12px;pointer-events:none}
+.leg:hover .tip,.gbar:hover .tip{display:block}
+.blk{border:1px dashed var(--mut);border-radius:5px;padding:8px;font-weight:600;font-size:12px;color:var(--ink);background:repeating-linear-gradient(135deg,var(--hatch1) 0 7px,var(--hatch2) 7px 14px);display:flex;align-items:center;gap:6px}
+.cellw{display:flex;flex-direction:column;gap:6px;min-width:250px}
+.daycol{width:150px;position:sticky;left:0;background:var(--panel);z-index:2}
+.daycol b{display:block}
+.today{box-shadow:inset 3px 0 0 var(--acc)}
+.fbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--mut);font-weight:600;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--acc);border-bottom-color:var(--acc)}
+.gwrap{position:relative}
+.ghead{display:grid;grid-template-columns:120px repeat(7,minmax(0,1fr));background:var(--panel2);border-bottom:1px solid var(--line)}
+.ghead div{padding:6px 8px;font-size:11.5px;color:var(--mut);font-weight:600;border-left:1px solid var(--line2)}
+.grow2{display:grid;grid-template-columns:120px 1fr;border-bottom:1px solid var(--line2);min-height:64px}
+.glab{padding:8px;font-weight:600}
+.gtrack{position:relative;background:repeating-linear-gradient(90deg,transparent 0 calc(100%/7 - 1px),var(--line2) calc(100%/7 - 1px) calc(100%/7))}
+.gbar{position:absolute;top:10px;height:44px;border-radius:4px;background:var(--acc);color:#fff;border:1px solid rgba(0,0,0,.2);padding:3px 6px;font-size:11px;overflow:visible;cursor:grab;white-space:nowrap;display:flex;flex-direction:column;justify-content:center}
+.app[data-theme=dark] .gbar{color:#06101F}
+.gbar.cnl{background:var(--gr-bg);color:var(--gr);text-decoration:line-through}
+.gbar.iss{background:#B3261E;color:#fff}
+.gbar.ban{outline:2px solid var(--ink)}
+.gblk{position:absolute;top:6px;height:52px;border:1px dashed var(--mut);border-radius:4px;background:repeating-linear-gradient(135deg,var(--hatch1) 0 7px,var(--hatch2) 7px 14px);font-size:11px;font-weight:600;padding:4px 6px;overflow:hidden}
+.scrim{position:fixed;inset:0;background:rgba(5,13,25,.45);z-index:40}
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(500px,100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:var(--shadow);z-index:50;display:flex;flex-direction:column}
+.panel .ph{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel .pb{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.panel .pf{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--panel2)}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld label{font-size:11.5px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.vmsg{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-radius:6px;padding:8px 10px;font-size:12.5px}
+.vmsg.er{background:var(--er-bg);color:var(--er)}
+.vmsg.wa{background:var(--wa-bg);color:var(--wa)}
+.vmsg.ok{background:var(--ok-bg);color:var(--ok)}
+.vmsg .t{flex:1 1 200px}
+.toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:80;align-items:flex-end}
+.toast{background:var(--nav);color:#fff;border-radius:6px;padding:10px 14px;box-shadow:var(--shadow);max-width:380px;display:flex;gap:10px;align-items:flex-start;border-left:4px solid #6FA1FF}
+.toast.er{border-left-color:#FF6B5E}.toast.ok{border-left-color:#58D68D}
+.modal{position:fixed;left:50%;top:12%;transform:translateX(-50%);width:min(520px,94vw);background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:60;padding:18px}
+.doc{background:#fff;color:#14202E;border:1px solid var(--line);border-radius:4px;padding:28px 32px;box-shadow:0 2px 12px rgba(11,31,58,.12);display:flex;flex-direction:column;gap:14px;max-width:820px;font-size:12.5px}
+.doc h2{margin:0;font-size:18px}
+.doc h4{margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#46525F}
+.doc table{width:100%;border-collapse:collapse}
+.doc th,.doc td{border:1px solid #C9CFC6;padding:4px 7px;text-align:left;font-size:12px}
+.doc th{background:#EEF0EB}
+.map{position:relative;height:150px;background:#EEF3F9;border:1px solid #C9CFC6;border-radius:4px;overflow:hidden}
+.mpt{position:absolute;width:9px;height:9px;margin:-4px 0 0 -4px;border-radius:50%;background:#1F5FD0;border:2px solid #fff}
+.mlb{position:absolute;font-size:10px;font-weight:600;margin:6px 0 0 -10px;color:#14202E}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:12px}
+.sig div{border-top:1px solid #14202E;padding-top:4px;font-size:11px;color:#46525F}
+.drop{border:2px dashed var(--acc);border-radius:10px;background:var(--acc-soft);padding:36px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.bar{height:8px;border-radius:4px;background:var(--line2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc)}
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:14px}
+.msy{background:#FFF8E6;border:1px solid #E5D49B;color:#3C3414;border-radius:4px;padding:5px 8px;font-size:12px;margin-bottom:6px}
+.app[data-theme=dark] .msy{background:#2D2810;border-color:#5C5126;color:#F0E4B0}
+.msy.bad{background:var(--er-bg);border-color:var(--urg-bg);color:var(--er)}
+.avl{display:grid;grid-template-columns:90px repeat(14,minmax(0,1fr));gap:3px;align-items:center}
+.avl i{height:22px;border-radius:3px;background:var(--ok-bg);border:1px solid var(--line2)}
+.avl i.m{background:repeating-linear-gradient(135deg,var(--hatch1) 0 5px,var(--hatch2) 5px 10px);border-color:var(--mut)}
+.avl i.a{background:var(--urg-bg);border-color:var(--urg-bg)}
+.avl small{color:var(--mut);font-size:10.5px;text-align:center}
+.info{display:flex;gap:8px;align-items:flex-start;background:var(--acc-soft);border-radius:6px;padding:8px 10px;font-size:12.5px}
+.edit-only{display:inline-flex}
+.legmain{display:flex;flex-direction:column;gap:3px;width:100%;background:none;border:0;padding:0 64px 0 0;cursor:pointer;text-align:left;color:inherit}
+.legact{position:absolute;right:6px;top:5px;display:flex;align-items:center;gap:6px}
+.cnlbtn{border:1px solid var(--line);background:var(--panel2);border-radius:3px;font-size:10.5px;font-weight:700;padding:0 5px;line-height:18px;cursor:pointer;align-items:center}
+.cnlbtn:hover{border-color:var(--acc);color:var(--acc)}
+.leg.thru{border-left-style:double;border-left-width:6px}
+.hrs{display:flex;justify-content:space-between;font-weight:400;font-size:10px;margin-top:2px}
+.gblk.ban{outline:3px solid var(--urg-bg);outline-offset:1px}
+.bad{background:var(--er-bg);color:var(--er);text-decoration:underline wavy;border-radius:2px;font-weight:600}
+.gbar b{font-size:11.5px}
+.gbar .tip{left:0;top:100%}
+@media (max-width:900px){.side{width:100%;min-height:0;position:static;flex-direction:row;overflow-x:auto;padding:8px}.app{flex-wrap:wrap}.navb{width:auto;white-space:nowrap}.brand,.sidefoot{display:none}}
+@media (max-width:700px){.edit-only{display:none}.content{padding:14px 16px 40px}.top,.demo{padding-left:16px;padding-right:16px}}
+</style>
+</helmet>
+<div class="app" data-theme="{{theme}}" style="--acc-l: {{accent}}" tabindex="0" onKeyDown="{{onKey}}" ref="{{rootRef}}">
+<nav class="side" aria-label="Main navigation">
+ <div class="brand">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="#6FA1FF" aria-hidden="true"><path d="M2 14l8-3V5l2-2 2 2v6l8 3v2l-8-1v4l2 1v1l-4-.5L8 21v-1l2-1v-4l-8 1z"/></svg>
+  <div><b>AeroPlanner</b><small>Phasis Air Cargo</small></div>
+ </div>
+ <sc-for list="{{navs}}" as="n" hint-placeholder-count="9">
+  <button class="{{n.cls}}" onClick="{{n.go}}"><span class="ico"></span>{{n.label}}<sc-if value="{{n.hasCnt}}" hint-placeholder-val="{{false}}"><span class="cnt">{{n.cnt}}</span></sc-if></button>
+ </sc-for>
+ <div class="sidefoot">Fictional demo operator<br><span class="mono">PHC / P7 / UGTB/TBS</span></div>
+</nav>
+<div class="main">
+ <header class="top">
+  <span class="utc"><span class="dotg"></span>ALL TIMES UTC</span>
+  <label class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M15 15l6 6"/></svg><input ref="{{srchRef}}" value="{{q}}" onChange="{{onQ}}" onKeyDown="{{onQKey}}" placeholder="Search flight, tail or airport, then Enter" aria-label="Global search"><span class="kbd">/</span></label>
+  <label class="fbar" style="gap:6px">Range <select class="sel" value="{{wkVal}}" onChange="{{onWeek}}" aria-label="Date range"><option value="all">14 Sep to 4 Oct 2026</option><option value="0">Week 1, 14 to 20 Sep</option><option value="1">Week 2, 21 to 27 Sep</option><option value="2">Week 3, 28 Sep to 4 Oct</option></select></label>
+  <span class="grow"></span>
+  <button class="btn sm" onClick="{{onTheme}}">{{themeLbl}}</button>
+  <button class="btn sm" onClick="{{onHelp}}" aria-label="Keyboard shortcuts">?</button>
+  <div style="position:relative">
+   <button class="btn sm" onClick="{{onMenu}}" aria-label="User menu"><b>OP</b> Ops planner</button>
+   <sc-if value="{{menu}}" hint-placeholder-val="{{false}}">
+    <div class="card" style="position:absolute;right:0;top:34px;width:230px;padding:10px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);z-index:40">
+     <small style="color:var(--mut);font-weight:600">PREVIEW LIST STATES</small>
+     <sc-for list="{{simOpts}}" as="o" hint-placeholder-count="4"><button class="{{o.cls}}" onClick="{{o.on}}">{{o.lbl}}</button></sc-for>
+     <button class="btn sm" onClick="{{onReset}}">Reset demo data</button>
+    </div>
+   </sc-if>
+  </div>
+ </header>
+ <sc-if value="{{banner}}" hint-placeholder-val="{{true}}">
+  <div class="demo"><b>Demo data</b><span>Fictional operator, all permit numbers are fake. Edits live in this session only.</span><span class="grow"></span><button class="btn sm" onClick="{{onReset}}">Reset demo</button><button class="btn sm" onClick="{{closeBanner}}" aria-label="Dismiss banner">Dismiss</button></div>
+ </sc-if>
+ <main class="content">
+  <sc-if value="{{simLoading}}" hint-placeholder-val="{{false}}">
+   <div class="card cardb" style="display:flex;flex-direction:column;gap:14px" aria-busy="true">
+    <div class="skel" style="width:220px;height:20px"></div>
+    <sc-for list="{{skelRows}}" as="r" hint-placeholder-count="6"><div class="skel" style="height:34px"></div></sc-for>
+   </div>
+  </sc-if>
+  <sc-if value="{{simError}}" hint-placeholder-val="{{false}}">
+   <div class="card empty"><span class="b b-er">Error</span><b>Could not load this list</b><span>The planning service did not respond (demo error, code 503). Your edits are safe.</span><button class="btn pri" onClick="{{retry}}">Try again</button></div>
+  </sc-if>
+  <sc-if value="{{simEmpty}}" hint-placeholder-val="{{false}}">
+   <div class="card empty"><b>Nothing here yet</b><span>No records match this view. Add a leg, import your Excel sheet, or change the filters.</span><button class="btn pri" onClick="{{retry}}">Back to normal data</button></div>
+  </sc-if>
+  <sc-if value="{{showContent}}" hint-placeholder-val="{{true}}">
+  <sc-if value="{{s_dash}}" hint-placeholder-val="{{true}}">
+   <div class="head"><div><h1>Operations overview</h1><p>Week of 14 Sep 2026. Demo clock: Sun 13 Sep, 14:00Z.</p></div></div>
+   <section class="kpis" aria-label="Key figures">
+    <sc-for list="{{kpis}}" as="k" hint-placeholder-count="6"><div class="{{k.cls}}"><small>{{k.label}}</small><b class="mono">{{k.val}}</b><small>{{k.sub}}</small></div></sc-for>
+   </section>
+   <section class="card">
+    <div class="cardh"><h3>Needs attention</h3><span class="b b-in">{{issCount}} open</span><span class="grow"></span><button class="btn sm" onClick="{{toConf}}">Open Conflicts centre</button></div>
+    <div class="scroll">
+     <table class="tbl">
+      <thead><tr><th>Level</th><th>Type</th><th>Issue</th><th>Aircraft</th><th>When (UTC)</th><th></th></tr></thead>
+      <tbody>
+       <sc-for list="{{attn}}" as="a" hint-placeholder-count="6">
+        <tr><td><span class="{{a.tcls}}">{{a.tlbl}}</span></td><td>{{a.type}}</td><td>{{a.msg}}</td><td class="mono">{{a.reg}}</td><td class="mono">{{a.when}}</td><td><button class="btn sm" onClick="{{a.go}}">Go to flight</button></td></tr>
+       </sc-for>
+      </tbody>
+     </table>
+    </div>
+    <sc-if value="{{attnNone}}" hint-placeholder-val="{{false}}"><div class="empty"><b>All clear</b><span>No open conflicts, urgent permits or continuity errors.</span></div></sc-if>
+    <sc-if value="{{attnAll}}" hint-placeholder-val="{{false}}"><div class="cardb" style="padding-top:8px"><button class="btn sm" onClick="{{toConf}}">Show all {{issCount}} issues</button></div></sc-if>
+   </section>
+   <section class="card">
+    <div class="cardh"><h3>Fleet availability, next 14 days</h3><span class="grow"></span><span class="b b-ok">Available</span><span class="b b-wa">Maintenance</span><span class="b b-ur">AOG</span></div>
+    <div class="cardb" style="display:flex;flex-direction:column;gap:6px;overflow-x:auto">
+     <div class="avl" style="min-width:640px"><span></span><sc-for list="{{avlDays}}" as="d" hint-placeholder-count="14"><small class="mono">{{d.w}}{{d.n}}</small></sc-for></div>
+     <sc-for list="{{avl}}" as="r" hint-placeholder-count="4">
+      <div class="avl" style="min-width:640px"><span class="mono" style="font-weight:600">{{r.reg}}</span><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="14"><i class="{{c.cls}}" title="{{c.ttl}}"></i></sc-for></div>
+     </sc-for>
+    </div>
+   </section>
+  </sc-if>
+  <sc-if value="{{s_sched}}" hint-placeholder-val="{{false}}">
+   <div class="head">
+    <div><h1>Schedule</h1><p>{{legTotal}} active legs in {{rangeLbl}}. Every aircraft header comes from the Fleet registry.</p></div>
+    <span class="grow"></span>
+    <div class="seg" role="group" aria-label="Layout"><button class="{{layTc}}" onClick="{{setTable}}">Table</button><button class="{{layGc}}" onClick="{{setGantt}}">Gantt</button></div>
+    <div class="seg" role="group" aria-label="Calendar format"><button class="{{calDc}}" onClick="{{setCalD}}">Dates</button><button class="{{calWc}}" onClick="{{setCalW}}">Days + dates + ISO weekday</button></div>
+    <button class="btn pri edit-only" onClick="{{addLeg}}">+ Add leg <span class="kbd">N</span></button>
+   </div>
+   <div class="tabs" role="tablist" aria-label="Aircraft">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5"><button class="{{t.cls}}" onClick="{{t.on}}">{{t.label}}</button></sc-for>
+   </div>
+   <div class="fbar">
+    <label>Type <select class="sel" value="{{fType}}" onChange="{{onFType}}"><option value="all">All types</option><option value="B737-800SF">B737-800SF</option><option value="B737-800BCF">B737-800BCF</option><option value="B767-300ER">B767-300ER</option></select></label>
+    <label>Station <select class="sel" value="{{fSta}}" onChange="{{onFSta}}"><option value="all">All stations</option><option value="URC">ZWWW/URC</option><option value="XIY">ZLXY/XIY</option><option value="ALA">UAAA/ALA</option><option value="BEG">LYBE/BEG</option><option value="ATH">LGAV/ATH</option><option value="BUD">LHBP/BUD</option><option value="OTP">LROP/OTP</option><option value="MXP">LIMC/MXP</option><option value="HKG">VHHH/HKG</option><option value="CCU">VECC/CCU</option><option value="FRL">LIPK/FRL</option><option value="DWC">OMDW/DWC</option></select></label>
+    <label>Flight <input class="inp mono" style="width:110px" value="{{fFn}}" onChange="{{onFFn}}" placeholder="PHC5"></label>
+    <label>Status <select class="sel" value="{{fStat}}" onChange="{{onFStat}}"><option value="all">Any status</option><option value="issue">Has an issue</option><option value="pending">Permit pending or missing</option><option value="obtained">Permits obtained</option><option value="cnl">Cancelled</option></select></label>
+    <button class="btn sm" onClick="{{clearF}}">Clear filters</button>
+   </div>
+   <sc-if value="{{hasSel}}" hint-placeholder-val="{{false}}">
+    <div class="info" style="align-items:center"><b>{{selN}} legs selected</b><span class="grow"></span><button class="btn sm" onClick="{{clearSel}}">Clear</button><button class="btn sm pri" onClick="{{toChk}}">Open checklist preview</button></div>
+   </sc-if>
+   <sc-if value="{{noLegs}}" hint-placeholder-val="{{false}}">
+    <div class="card empty"><b>No legs match these filters</b><span>Widen the date range or clear the filters.</span><button class="btn pri" onClick="{{clearF}}">Clear filters</button></div>
+   </sc-if>
+   <sc-if value="{{layT}}" hint-placeholder-val="{{true}}">
+    <div class="card scroll">
+     <table class="tbl">
+      <thead><tr><th class="daycol">Day</th><sc-for list="{{cols}}" as="c" hint-placeholder-count="4"><th>{{c.reg}} <span class="mono" style="font-weight:400;text-transform:none">{{c.type}}</span></th></sc-for></tr></thead>
+      <tbody>
+       <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+        <tr>
+         <td class="{{d.cls}}"><b class="mono">{{d.lbl}}</b><small style="color:var(--mut)">{{d.sub}}</small><br><span class="b b-nt">{{d.cnt}} flights</span></td>
+         <sc-for list="{{d.cells}}" as="cell" hint-placeholder-count="4">
+          <td style="vertical-align:top">
+           <div class="cellw" style="min-width: {{colW}}">
+            <sc-for list="{{cell.items}}" as="it" hint-placeholder-count="2">
+             <sc-if value="{{it.isBlk}}" hint-placeholder-val="{{false}}"><div class="blk">{{it.txt}}</div></sc-if>
+             <sc-if value="{{it.isLeg}}" hint-placeholder-val="{{true}}">
+              <div class="{{it.cls}}">
+               <button class="legmain" onClick="{{it.open}}">
+                <span class="r1"><span class="fn mono strike">{{it.fn}}</span><sc-if value="{{it.thru}}" hint-placeholder-val="{{false}}"><span class="b b-in">{{it.thruTag}}</span></sc-if></span>
+                <span class="r2 mono strike pair">{{it.pair}}</span>
+                <span class="r2 mono strike">{{it.times}}<sc-if value="{{it.plus}}" hint-placeholder-val="{{false}}"><span class="plus1">+1</span></sc-if></span>
+                <span class="r3"><span class="lt mono">{{it.lt}}</span><span class="{{it.pcls}}">{{it.ptxt}}</span></span>
+               </button>
+               <span class="legact"><input type="checkbox" checked="{{it.sel}}" onChange="{{it.toggle}}" aria-label="Select leg for checklist"><button class="cnlbtn edit-only" onClick="{{it.cnlT}}">{{it.cnlTxt}}</button></span>
+               <div class="tip"><sc-for list="{{it.tip}}" as="line" hint-placeholder-count="4"><div>{{line}}</div></sc-for></div>
+              </div>
+             </sc-if>
+            </sc-for>
+           </div>
+          </td>
+         </sc-for>
+        </tr>
+       </sc-for>
+      </tbody>
+     </table>
+    </div>
+   </sc-if>
+   <sc-if value="{{layG}}" hint-placeholder-val="{{false}}">
+    <div class="tabs"><sc-for list="{{gwTabs}}" as="w" hint-placeholder-count="3"><button class="{{w.cls}}" onClick="{{w.on}}">{{w.label}}</button></sc-for></div>
+    <div class="info">Drag a leg to another aircraft row or time. Dropping onto a hatched maintenance or AOG block is refused.</div>
+    <div class="card scroll">
+     <div style="min-width:900px">
+      <div class="ghead"><div>Aircraft</div><sc-for list="{{gdays}}" as="g" hint-placeholder-count="7"><div>{{g.lbl}}<div class="hrs mono"><span>00</span><span>06</span><span>12</span><span>18</span></div></div></sc-for></div>
+      <sc-for list="{{grows}}" as="r" hint-placeholder-count="4">
+       <div class="grow2">
+        <div class="glab"><span class="mono">{{r.reg}}</span><br><small style="color:var(--mut)">{{r.type}}</small></div>
+        <div class="gtrack" onDragOver="{{r.over}}" onDrop="{{r.drop}}">
+         <sc-for list="{{r.blks}}" as="b" hint-placeholder-count="1"><div class="{{b.cls}}" style="left: {{b.left}}; width: {{b.w}}">{{b.txt}}</div></sc-for>
+         <sc-for list="{{r.bars}}" as="b" hint-placeholder-count="3"><button class="{{b.cls}}" style="left: {{b.left}}; width: {{b.w}}" draggable="true" onDragStart="{{b.start}}" onClick="{{b.open}}"><b>{{b.fn}}</b><span>{{b.pair}}</span><div class="tip"><sc-for list="{{b.tip}}" as="line" hint-placeholder-count="3"><div>{{line}}</div></sc-for></div></button></sc-for>
+        </div>
+       </div>
+      </sc-for>
+     </div>
+    </div>
+   </sc-if>
+  </sc-if>
+  <sc-if value="{{s_conf}}" hint-placeholder-val="{{false}}">
+   <div class="head"><div><h1>Conflicts and validation</h1><p>Every rule runs on every edit. Fixes apply in one click and the list updates at once.</p></div><span class="grow"></span><span class="b b-in">{{issCount}} open</span></div>
+   <div class="fbar"><sc-for list="{{cfOpts}}" as="o" hint-placeholder-count="6"><button class="{{o.cls}}" onClick="{{o.on}}">{{o.label}}</button></sc-for></div>
+   <section class="card">
+    <div class="scroll">
+     <table class="tbl">
+      <thead><tr><th>Severity</th><th>Type</th><th>Aircraft</th><th>Date and time</th><th>Issue and one-click fix</th><th></th></tr></thead>
+      <tbody>
+       <sc-for list="{{conf}}" as="c" hint-placeholder-count="6">
+        <tr>
+         <td><span class="{{c.sevCls}}">{{c.sev}}</span></td><td>{{c.typeLbl}}</td><td class="mono">{{c.reg}}</td><td class="mono">{{c.when}}</td>
+         <td><div>{{c.msg}}</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"><sc-for list="{{c.fixes}}" as="f" hint-placeholder-count="1"><button class="btn sm fix edit-only" onClick="{{f.on}}">{{f.label}}</button></sc-for></div></td>
+         <td><button class="btn sm" onClick="{{c.go}}">Go to flight</button></td>
+        </tr>
+       </sc-for>
+      </tbody>
+     </table>
+    </div>
+    <sc-if value="{{confNone}}" hint-placeholder-val="{{false}}"><div class="empty"><span class="b b-ok">Clear</span><b>No conflicts in this view</b><span>Restore the demo data to see the seeded problems again.</span><button class="btn" onClick="{{onReset}}">Reset demo data</button></div></sc-if>
+   </section>
+   <div class="cols2">
+    <section class="card">
+     <div class="cardh"><h3>Rules checked</h3></div>
+     <div class="cardb" style="display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{rules}}" as="r" hint-placeholder-count="5"><div style="display:flex;gap:10px;align-items:flex-start"><span class="{{r.cls}}">{{r.l}}</span><div><b>{{r.t}}</b><div style="color:var(--mut)">{{r.ex}}</div><div>Fix: {{r.fx}}</div></div></div></sc-for>
+     </div>
+    </section>
+    <section class="card">
+     <div class="cardh"><h3>Deliberately not flagged</h3></div>
+     <div class="cardb" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:10px;align-items:flex-start"><span class="b b-nt">Not flagged</span><div><b class="mono">PHC611</b> Through flight, Wed 16 Sep<div style="color:var(--mut)">TBS > URC > XIY under one number on 4L-PXC. Consecutive legs of one number are grouped with a double bar on the Schedule and never raise a conflict.</div></div></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><span class="b b-nt">Not flagged</span><div><b class="mono">PHC507</b> and <b class="mono">PHC507D</b>, Wed 16 Sep<div style="color:var(--mut)">Two aircraft on the same day with a D suffix is the agreed way to run parallel flights.</div></div></div>
+     </div>
+    </section>
+   </div>
+  </sc-if>
+  <sc-if value="{{s_perm}}" hint-placeholder-val="{{false}}">
+   <div class="head"><div><h1>Permits board</h1><p>Overflight and landing permits grouped by country. Urgent items are pinned on top.</p></div><span class="grow"></span>
+    <label>Country <select class="sel" value="{{pcn}}" onChange="{{onPcn}}"><option value="all">All countries</option><option>China</option><option>Greece</option><option>Hungary</option><option>India</option><option>Italy</option><option>Kazakhstan</option><option>Romania</option><option>Serbia</option><option>UAE</option></select></label></div>
+   <div class="fbar"><sc-for list="{{pfOpts}}" as="o" hint-placeholder-count="6"><button class="{{o.cls}}" onClick="{{o.on}}">{{o.label}}</button></sc-for></div>
+   <sc-if value="{{hasPin}}" hint-placeholder-val="{{true}}">
+    <section class="card" style="border-color:var(--urg-bg)">
+     <div class="cardh"><span class="b b-ur">Pinned</span><h3>Urgent, departing within 48 hours</h3></div>
+     <div class="scroll"><table class="tbl"><thead><tr><th>Country</th><th>Permit</th><th>Flight</th><th>Departs</th><th>Aircraft</th><th>Status</th><th></th></tr></thead><tbody>
+      <sc-for list="{{pPin}}" as="r" hint-placeholder-count="2"><tr><td><b>{{r.c}}</b></td><td>{{r.type}}</td><td class="mono">{{r.fn}} {{r.route}}</td><td class="mono">{{r.when}}</td><td class="mono">{{r.reg}}</td><td><span class="{{r.cls}}">{{r.txt}}</span></td><td style="white-space:nowrap"><button class="btn sm fix edit-only" onClick="{{r.act}}">{{r.actL}}</button> <button class="btn sm" onClick="{{r.go}}">Go to flight</button></td></tr></sc-for>
+     </tbody></table></div>
+    </section>
+   </sc-if>
+   <sc-for list="{{pGroups}}" as="g" hint-placeholder-count="3">
+    <section class="card">
+     <div class="cardh"><h3>{{g.country}}</h3><span class="b b-nt">{{g.n}} permits</span></div>
+     <div class="scroll"><table class="tbl"><thead><tr><th>Permit</th><th>Number</th><th>Flight</th><th>Departs</th><th>Aircraft</th><th>Status</th><th></th></tr></thead><tbody>
+      <sc-for list="{{g.rows}}" as="r" hint-placeholder-count="3"><tr><td>{{r.type}}</td><td class="mono">{{r.no}}</td><td class="mono {{r.rowCls}}">{{r.fn}} {{r.route}}</td><td class="mono">{{r.when}}</td><td class="mono">{{r.reg}}</td><td><span class="{{r.cls}}">{{r.txt}}</span></td><td style="white-space:nowrap"><sc-if value="{{r.hasAct}}" hint-placeholder-val="{{false}}"><button class="btn sm fix edit-only" onClick="{{r.act}}">{{r.actL}}</button></sc-if> <button class="btn sm" onClick="{{r.go}}">Go to flight</button></td></tr></sc-for>
+     </tbody></table></div>
+    </section>
+   </sc-for>
+   <sc-if value="{{pNone}}" hint-placeholder-val="{{false}}"><div class="card empty"><b>No permits match</b><span>Try another status or country.</span></div></sc-if>
+  </sc-if>
+  <sc-if value="{{s_chk}}" hint-placeholder-val="{{false}}">
+   <div class="head"><div><h1>Checklist export</h1><p>Pick one leg or many. The preview is the document that gets exported.</p></div><span class="grow"></span>
+    <button class="btn pri" onClick="{{exPdf}}">Export PDF</button><button class="btn" onClick="{{exXls}}">Excel</button><button class="btn" onClick="{{exDoc}}">Word</button></div>
+   <sc-if value="{{exBusy}}" hint-placeholder-val="{{false}}"><div class="info" style="align-items:center"><span>Building {{exFmt}} file</span><div class="bar grow"><i style="width: {{exPct}}"></i></div><span class="mono">{{exPct}}</span></div></sc-if>
+   <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+    <section class="card" style="flex:1 1 300px;max-width:380px">
+     <div class="cardh"><h3>Legs</h3><span class="b b-in">{{chkN}} selected</span><span class="grow"></span><button class="btn sm" onClick="{{clearSelChk}}">Clear</button></div>
+     <div class="cardb" style="padding-bottom:6px"><input class="inp" style="width:100%" value="{{ck}}" onChange="{{onCk}}" placeholder="Filter by flight, station or tail" aria-label="Filter legs"></div>
+     <div style="max-height:620px;overflow:auto">
+      <sc-for list="{{pick}}" as="p" hint-placeholder-count="8">
+       <label style="display:flex;gap:8px;align-items:center;padding:7px 14px;border-top:1px solid var(--line2);cursor:pointer"><input type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}"><span class="mono" style="font-weight:600;min-width:74px">{{p.fn}}</span><span class="mono" style="color:var(--mut)">{{p.route}}</span><span class="grow"></span><span class="mono" style="color:var(--mut);font-size:12px">{{p.when}}</span></label>
+      </sc-for>
+     </div>
+    </section>
+    <div style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:12px">
+     <sc-if value="{{chkHas}}" hint-placeholder-val="{{false}}">
+      <article class="doc" aria-label="Checklist preview">
+       <div style="display:flex;gap:14px;align-items:center;border-bottom:2px solid #14202E;padding-bottom:10px">
+        <div style="width:44px;height:44px;border:1px dashed #8A94A0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#46525F;text-align:center">LOGO</div>
+        <div style="flex:1"><h2>{{co.name}}</h2><div class="mono" style="font-size:11.5px">ICAO PHC | IATA P7 | AOC [DEMO-0001] | Base UGTB/TBS</div></div>
+        <div style="text-align:right"><b>FLIGHT CHECKLIST</b><div class="mono" style="font-size:11.5px">{{dSpan}}</div></div>
+       </div>
+       <div style="font-size:11.5px;color:#46525F">{{co.hdr}}</div>
+       <div><h4>Aircraft</h4><table><thead><tr><th>Role</th><th>Registration</th><th>Type</th><th>Serial no.</th><th>Year</th><th>MTOW</th><th>Payload</th></tr></thead><tbody>
+        <sc-for list="{{dAc}}" as="a" hint-placeholder-count="2"><tr><td>{{a.role}}</td><td class="mono"><b>{{a.reg}}</b></td><td class="mono">{{a.type}}</td><td class="mono">{{a.ser}}</td><td class="mono">{{a.mfg}}</td><td class="mono">{{a.mtow}}</td><td class="mono">{{a.pay}}</td></tr></sc-for>
+       </tbody></table></div>
+       <div><h4>Route</h4>
+        <div class="map" role="img" aria-label="Route map of selected legs">
+         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:100%"><path d="{{mpath}}" fill="none" stroke="#1F5FD0" stroke-width="1.6" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/></svg>
+         <sc-for list="{{mpts}}" as="m" hint-placeholder-count="3"><span class="mpt" style="left: {{m.x}}%; top: {{m.y}}%"></span><span class="mlb mono" style="left: {{m.x}}%; top: {{m.y}}%">{{m.l}}</span></sc-for>
+        </div>
+        <table style="margin-top:8px"><thead><tr><th>Flight</th><th>Aircraft</th><th>Route</th><th>Date</th><th>ETD</th><th>ETA</th><th>Block</th><th>Type</th></tr></thead><tbody>
+         <sc-for list="{{dLegs}}" as="l" hint-placeholder-count="3"><tr><td class="mono"><b>{{l.fn}}</b></td><td class="mono">{{l.ac}}</td><td class="mono">{{l.route}}</td><td class="mono">{{l.date}}</td><td class="mono">{{l.etd}}</td><td class="mono">{{l.eta}}<sc-if value="{{l.plus}}" hint-placeholder-val="{{false}}"> (+1)</sc-if></td><td class="mono">{{l.blk}}</td><td>{{l.type}}</td></tr></sc-for>
+        </tbody></table>
+       </div>
+       <div><h4>Permits per country</h4><table><thead><tr><th>Country</th><th>Permit</th><th>Flight</th><th>Number</th><th>Status</th><th>Valid</th></tr></thead><tbody>
+        <sc-for list="{{dPerm}}" as="r" hint-placeholder-count="3"><tr><td>{{r.c}}</td><td>{{r.type}}</td><td class="mono">{{r.fn}}</td><td class="mono">{{r.no}}</td><td>{{r.status}}</td><td class="mono">{{r.valid}}</td></tr></sc-for>
+       </tbody></table></div>
+       <div><h4>Special notes</h4><sc-for list="{{dNotes}}" as="n" hint-placeholder-count="1"><div>{{n}}</div></sc-for></div>
+       <div class="sig"><div>Prepared by, Flight Operations</div><div>Commander signature and date</div></div>
+       <div style="font-size:10.5px;color:#46525F">All times UTC unless marked LT. Demo document, fictional operator.</div>
+      </article>
+     </sc-if>
+    </div>
+   </div>
+   <sc-if value="{{chkEmpty}}" hint-placeholder-val="{{false}}"><div class="card empty"><b>No legs selected</b><span>Tick legs in the list, or on the Schedule, to build a checklist.</span><button class="btn pri" onClick="{{pickDemo}}">Select the PHC611 through flight</button></div></sc-if>
+  </sc-if>
+  <sc-if value="{{s_fleet}}" hint-placeholder-val="{{false}}">
+   <div class="head"><div><h1>Fleet registry</h1><p>Master data for every aircraft.</p></div><span class="grow"></span><button class="btn pri edit-only" onClick="{{addAc}}">+ Add aircraft</button></div>
+   <div class="info"><b>Why headers cannot disagree:</b> schedule columns, Gantt rows and checklists read the registration and type from this table. There is no second place to type them.</div>
+   <section class="card scroll">
+    <table class="tbl">
+     <thead><tr><th>Tail number</th><th>Type</th><th>Serial no.</th><th>Year</th><th>MTOW</th><th>Cargo payload</th><th>Status</th><th></th></tr></thead>
+     <tbody>
+      <sc-for list="{{fleet}}" as="f" hint-placeholder-count="4">
+       <tr><td class="mono"><b>{{f.reg}}</b><sc-if value="{{f.warn}}" hint-placeholder-val="{{false}}"> <span class="b b-wa" title="{{f.warnTxt}}">Incomplete</span></sc-if></td><td class="mono">{{f.type}}</td><td class="mono">{{f.ser}}</td><td class="mono">{{f.mfg}}</td><td class="mono">{{f.mtow}}</td><td class="mono">{{f.pay}}</td><td><span class="{{f.stCls}}">{{f.st}}</span></td><td><button class="btn sm edit-only" onClick="{{f.edit}}">Edit</button></td></tr>
+      </sc-for>
+     </tbody>
+    </table>
+   </section>
+  </sc-if>
+  <sc-if value="{{s_ap}}" hint-placeholder-val="{{false}}">
+   <div class="head"><div><h1>Airport directory</h1><p>Time zones and UTC offsets used for local day tags (LT).</p></div><span class="grow"></span><label class="search" style="flex:0 1 300px"><input value="{{apq}}" onChange="{{onApq}}" placeholder="Search ICAO, IATA, city or country" aria-label="Search airports"></label></div>
+   <section class="card scroll">
+    <table class="tbl">
+     <thead><tr><th>IATA</th><th>ICAO</th><th>Airport</th><th>Country</th><th>UTC offset</th></tr></thead>
+     <tbody>
+      <sc-for list="{{aps}}" as="a" hint-placeholder-count="8">
+       <tr><td class="mono"><b>{{a.iata}}</b></td><td class="mono">{{a.icao}}</td><td>{{a.name}}<sc-if value="{{a.prov}}" hint-placeholder-val="{{false}}"> <span class="b b-nt">Provisional (TBD)</span> <small style="color:var(--mut)">Placeholder XXXX/XXX for ferry legs whose destination is not decided. It skips continuity and permit checks.</small></sc-if></td><td>{{a.country}}</td><td class="mono">{{a.off}}</td></tr>
+      </sc-for>
+     </tbody>
+    </table>
+    <sc-if value="{{apNone}}" hint-placeholder-val="{{false}}"><div class="empty"><b>No airport matches</b><span>Check the code or clear the search.</span><button class="btn" onClick="{{apClear}}">Clear search</button></div></sc-if>
+   </section>
+  </sc-if>
+  <sc-if value="{{s_co}}" hint-placeholder-val="{{false}}">
+   <div class="head"><div><h1>Company profile</h1><p>Printed on every checklist.</p></div></div>
+   <section class="card cardb" style="max-width:820px;display:flex;flex-direction:column;gap:14px">
+    <div class="fgrid">
+     <div class="fld"><label for="c-n">Legal name</label><input id="c-n" class="inp" value="{{co.name}}" onChange="{{onCoName}}"></div>
+     <div class="fld"><label for="c-v">VAT number</label><input id="c-v" class="inp mono" defaultValue="GE-DEMO-000000"></div>
+     <div class="fld"><label for="c-i">ICAO designator</label><input id="c-i" class="inp mono" defaultValue="PHC"></div>
+     <div class="fld"><label for="c-ia">IATA designator</label><input id="c-ia" class="inp mono" defaultValue="P7"></div>
+     <div class="fld"><label for="c-a">AOC number</label><input id="c-a" class="inp mono" defaultValue="[DEMO-0001]"></div>
+     <div class="fld"><label for="c-b">Base</label><input id="c-b" class="inp mono" defaultValue="UGTB/TBS"></div>
+     <div class="fld"><label for="c-ad">Address</label><input id="c-ad" class="inp" defaultValue="[Street], Tbilisi, Georgia"></div>
+     <div class="fld"><label for="c-ct">Operations contact</label><input id="c-ct" class="inp" defaultValue="ops@example.invalid"></div>
+    </div>
+    <div class="fld"><label for="c-h">Default checklist header text</label><textarea id="c-h" class="inp" value="{{co.hdr}}" onChange="{{onCoHdr}}"></textarea></div>
+    <div style="display:flex;gap:12px;align-items:center"><div style="width:64px;height:64px;border:1px dashed var(--mut);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:11px">LOGO</div><button class="btn" onClick="{{logoUp}}">Upload logo</button><span style="color:var(--mut)">PNG or SVG, shown on checklists</span></div>
+    <div><button class="btn pri" onClick="{{saveCo}}">Save profile</button></div>
+   </section>
+  </sc-if>
+  <sc-if value="{{s_imp}}" hint-placeholder-val="{{false}}">
+   <div class="head"><div><h1>Import from Excel</h1><p>Turn the yearly sheet into structured legs. Nothing is saved until you confirm.</p></div></div>
+   <sc-if value="{{imIdle}}" hint-placeholder-val="{{false}}">
+    <div class="drop" onDragOver="{{noop}}" onDrop="{{dropImp}}">
+     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+     <b style="font-size:17px">Drop your .xlsx here</b>
+     <span style="color:var(--mut)">Merged cells, free text such as "ETD/03.30Z" and colour codes are all read.</span>
+     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"><button class="btn pri" onClick="{{pickImp}}">Browse files</button><button class="btn" onClick="{{startImp}}">Use sample: Phasis_2026_Season.xlsx</button></div>
+    </div>
+   </sc-if>
+   <sc-if value="{{imRun}}" hint-placeholder-val="{{false}}">
+    <section class="card cardb" style="display:flex;flex-direction:column;gap:12px" aria-busy="true">
+     <b style="font-size:16px">Reading Phasis_2026_Season.xlsx</b>
+     <div class="bar"><i style="width: {{imPct}}"></i></div>
+     <div style="display:flex;gap:12px;flex-wrap:wrap"><span>{{imStage}}</span><span class="grow"></span><span class="mono">{{imParsed}} legs parsed</span><span class="mono">{{imPct}}</span></div>
+    </section>
+   </sc-if>
+   <sc-if value="{{imDone}}" hint-placeholder-val="{{false}}">
+    <section class="kpis">
+     <div class="kpi"><small>Legs parsed</small><b class="mono">517</b><small>from 812 rows, 1 sheet</small></div>
+     <div class="kpi warn"><small>Need review</small><b class="mono">{{imRevN}}</b><small>highlighted below</small></div>
+     <div class="kpi"><small>Ready to import</small><b class="mono">{{imOkN}}</b><small>no issues found</small></div>
+    </section>
+    <section class="card">
+     <div class="cardh"><h3>517 legs parsed, {{imRevN}} need review</h3><span class="grow"></span><button class="btn sm" onClick="{{resetImp}}">Start over</button><button class="btn pri sm" onClick="{{doImport}}">Import {{imOkN}} legs</button></div>
+     <div class="scroll"><div style="min-width:760px">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);border-bottom:1px solid var(--line)"><div style="padding:8px 14px;font-weight:600;color:var(--mut);text-transform:uppercase;font-size:11.5px;letter-spacing:.05em">Messy cell text</div><div style="padding:8px 14px;font-weight:600;color:var(--mut);text-transform:uppercase;font-size:11.5px;letter-spacing:.05em;border-left:1px solid var(--line)">Structured legs</div></div>
+      <sc-for list="{{imRows}}" as="r" hint-placeholder-count="8">
+       <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);border-bottom:1px solid var(--line2)">
+        <div style="padding:10px 14px"><div class="mono" style="background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:6px 8px;word-break:break-word"><sc-for list="{{r.parts}}" as="p" hint-placeholder-count="1"><span class="{{p.cls}}">{{p.t}}</span></sc-for></div></div>
+        <div style="padding:10px 14px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:6px">
+         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><b class="mono">{{r.fn}}</b><span class="mono">{{r.route}}</span><span class="mono">{{r.times}}</span><span class="{{r.permCls}}">{{r.perm}}</span></div>
+         <div style="color:var(--mut);font-size:12.5px">{{r.note}}</div>
+         <sc-if value="{{r.open}}" hint-placeholder-val="{{false}}"><div class="vmsg wa"><span class="b b-wa">Needs review</span><span class="t">{{r.problem}} Suggested: <b>{{r.sug}}</b></span><button class="btn sm fix" onClick="{{r.accept}}">Accept fix</button></div></sc-if>
+         <sc-if value="{{r.done}}" hint-placeholder-val="{{false}}"><span class="b b-ok">Fixed</span></sc-if>
+        </div>
+       </div>
+      </sc-for>
+     </div></div>
+    </section>
+   </sc-if>
+  </sc-if>
+  </sc-if>
+ </main>
+</div>
+<sc-if value="{{panelOpen}}" hint-placeholder-val="{{false}}">
+ <div class="scrim" onClick="{{closePanel}}"></div>
+ <aside class="panel" role="dialog" aria-label="Leg detail">
+  <div class="ph"><h3 style="margin:0;font-size:16px">{{pTitle}}</h3><sc-if value="{{cnlOn}}" hint-placeholder-val="{{false}}"><span class="b b-cn">Cancelled</span></sc-if><span class="grow"></span><button class="btn sm" onClick="{{closePanel}}" aria-label="Close panel">Close <span class="kbd">Esc</span></button></div>
+  <div class="pb">
+   <section aria-label="Validation" style="display:flex;flex-direction:column;gap:6px">
+    <sc-for list="{{vals}}" as="v" hint-placeholder-count="1"><div class="{{v.cls}}"><span class="t">{{v.msg}}</span><sc-for list="{{v.fixes}}" as="f" hint-placeholder-count="1"><button class="btn sm fix" onClick="{{f.on}}">{{f.label}}</button></sc-for></div></sc-for>
+    <sc-if value="{{valOk}}" hint-placeholder-val="{{true}}"><div class="vmsg ok"><span class="b b-ok">OK</span><span class="t">No validation issues for this leg.</span></div></sc-if>
+   </section>
+   <div class="fgrid">
+    <div class="fld"><label for="f-fn">Flight number</label><div style="display:flex;gap:6px"><input id="f-fn" class="inp mono" style="flex:1" value="{{pd.fn}}" onChange="{{pf.fn}}"><button class="btn sm" onClick="{{addD}}" title="Appends D for a parallel flight on the same day">+ D</button></div></div>
+    <div class="fld"><label for="f-type">Flight type</label><select id="f-type" class="sel" value="{{pd.type}}" onChange="{{pf.type}}"><option>Landing</option><option>Overflight</option><option>Technical stop</option><option>Ferry</option></select></div>
+    <div class="fld"><label for="f-ac">Aircraft (primary)</label><select id="f-ac" class="sel" value="{{pd.ac}}" onChange="{{pf.ac}}"><option value="PXA">4L-PXA  B737-800SF</option><option value="PXB">4L-PXB  B737-800BCF</option><option value="PXC">4L-PXC  B767-300ER</option><option value="PXD">4L-PXD  B767-300ER</option></select></div>
+    <div class="fld"><label for="f-bac">Backup aircraft</label><select id="f-bac" class="sel" value="{{pd.bac}}" onChange="{{pf.bac}}"><option value="PXA">4L-PXA  B737-800SF</option><option value="PXB">4L-PXB  B737-800BCF</option><option value="PXC">4L-PXC  B767-300ER</option><option value="PXD">4L-PXD  B767-300ER</option></select></div>
+    <div class="fld"><label for="f-dep">Departure station</label><input id="f-dep" class="inp mono" list="aplist" value="{{pd.dep}}" onChange="{{pf.dep}}"><span class="mono" style="color:var(--mut);font-size:12px">{{dFmt}}</span></div>
+    <div class="fld"><label for="f-arr">Arrival station</label><input id="f-arr" class="inp mono" list="aplist" value="{{pd.arr}}" onChange="{{pf.arr}}" placeholder="ICAO, IATA or XXXX/XXX"><span class="mono" style="color:var(--mut);font-size:12px">{{aFmt}}</span></div>
+    <div class="fld"><label for="f-date">Departure date (UTC)</label><input id="f-date" type="date" class="inp mono" value="{{dateVal}}" min="2026-09-14" max="2026-10-04" onChange="{{onDate}}"></div>
+    <div class="fld"><label>Block time</label><div class="mono" style="height:32px;display:flex;align-items:center;gap:8px"><b>{{blockTxt}}</b><sc-if value="{{plus}}" hint-placeholder-val="{{false}}"><span class="plus1">+1</span></sc-if></div></div>
+    <div class="fld"><label for="f-etd">ETD UTC</label><input id="f-etd" type="time" class="inp mono" value="{{pd.etd}}" onChange="{{pf.etd}}"></div>
+    <div class="fld"><label for="f-eta">ETA UTC</label><input id="f-eta" type="time" class="inp mono" value="{{pd.eta}}" onChange="{{pf.eta}}"></div>
+   </div>
+   <div class="mono" style="color:var(--mut);font-size:12px">Arrives {{arrWhen}} | {{ltTxt}}</div>
+   <datalist id="aplist"><option value="UGTB/TBS"></option><option value="ZWWW/URC"></option><option value="ZLXY/XIY"></option><option value="UAAA/ALA"></option><option value="LYBE/BEG"></option><option value="LGAV/ATH"></option><option value="LHBP/BUD"></option><option value="LROP/OTP"></option><option value="LIMC/MXP"></option><option value="VHHH/HKG"></option><option value="VECC/CCU"></option><option value="LIPK/FRL"></option><option value="OMDW/DWC"></option><option value="XXXX/XXX"></option></datalist>
+   <section>
+    <h3 style="margin:0 0 6px;font-size:13px">Permits for this route</h3>
+    <div class="card scroll">
+     <table class="tbl">
+      <thead><tr><th>Country</th><th>Type</th><th>Number</th><th>Status</th><th>Valid</th></tr></thead>
+      <tbody>
+       <sc-for list="{{prows}}" as="r" hint-placeholder-count="2">
+        <tr><td>{{r.c}}</td><td>{{r.type}}</td><td class="mono">{{r.no}}</td><td><span class="{{r.pcls}}">{{r.ptxt}}</span><br><select class="sel" style="height:26px;margin-top:4px" value="{{r.status}}" onChange="{{r.onStatus}}" aria-label="Permit status"><option>Obtained</option><option>Pending</option><option>Cancelled</option></select></td><td class="mono">{{r.valid}}</td></tr>
+       </sc-for>
+      </tbody>
+     </table>
+     <sc-if value="{{noPerm}}" hint-placeholder-val="{{false}}"><div class="cardb" style="color:var(--mut)">No third country permits needed for this route.</div></sc-if>
+    </div>
+    <small style="color:var(--mut)">Rows are added or removed automatically when you change the route.</small>
+   </section>
+   <div class="fld"><label for="f-notes">Special notes</label><textarea id="f-notes" class="inp" value="{{pd.notes}}" onChange="{{pf.notes}}"></textarea></div>
+   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked="{{cnlOn}}" onChange="{{pf.cnl}}"> Cancel this leg (CNL). It stays in history and leaves the daily count.</label>
+  </div>
+  <div class="pf"><button class="btn pri" onClick="{{onSave}}">Save leg</button><button class="btn" onClick="{{closePanel}}">Cancel</button><span class="grow"></span><sc-if value="{{canChk}}" hint-placeholder-val="{{true}}"><button class="btn" onClick="{{addChk}}">Add to checklist</button></sc-if></div>
+ </aside>
+</sc-if>
+<sc-if value="{{fdOpen}}" hint-placeholder-val="{{false}}">
+ <div class="scrim" onClick="{{closeFd}}"></div>
+ <aside class="panel" role="dialog" aria-label="Aircraft record">
+  <div class="ph"><h3 style="margin:0;font-size:16px">{{fdTitle}}</h3><span class="grow"></span><button class="btn sm" onClick="{{closeFd}}">Close</button></div>
+  <div class="pb">
+   <div class="fgrid">
+    <div class="fld"><label for="a-r">Tail number</label><input id="a-r" class="inp mono" value="{{fdd.reg}}" onChange="{{fdh.reg}}"></div>
+    <div class="fld"><label for="a-t">Type</label><select id="a-t" class="sel" value="{{fdd.type}}" onChange="{{fdh.type}}"><option>B737-800SF</option><option>B737-800BCF</option><option>B767-300ER</option></select></div>
+    <div class="fld"><label for="a-s">Serial number</label><input id="a-s" class="inp mono" value="{{fdd.ser}}" onChange="{{fdh.ser}}"></div>
+    <div class="fld"><label for="a-y">Year of manufacture</label><input id="a-y" class="inp mono" value="{{fdd.mfg}}" onChange="{{fdh.mfg}}"></div>
+    <div class="fld"><label for="a-m">MTOW kg</label><input id="a-m" class="inp mono" value="{{fdd.mtow}}" onChange="{{fdh.mtow}}"></div>
+    <div class="fld"><label for="a-p">Cargo payload kg</label><input id="a-p" class="inp mono" value="{{fdd.pay}}" onChange="{{fdh.pay}}"></div>
+    <div class="fld"><label for="a-st">Status</label><select id="a-st" class="sel" value="{{fdd.st}}" onChange="{{fdh.st}}"><option>Active</option><option>AOG</option><option>Maintenance</option></select></div>
+   </div>
+   <div class="info">Empty fields show a warning in the registry and appear as "Missing" on checklists.</div>
+  </div>
+  <div class="pf"><button class="btn pri" onClick="{{saveFd}}">Save aircraft</button><button class="btn" onClick="{{closeFd}}">Cancel</button></div>
+ </aside>
+</sc-if>
+<div class="toasts" role="status" aria-live="polite">
+ <sc-for list="{{toasts}}" as="t" hint-placeholder-count="0"><div class="{{t.cls}}">{{t.m}}</div></sc-for>
+</div>
+<sc-if value="{{help}}" hint-placeholder-val="{{false}}">
+ <div class="scrim" onClick="{{onHelp}}"></div>
+ <div class="modal" role="dialog" aria-label="Keyboard shortcuts">
+  <div style="display:flex;align-items:center;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Keyboard shortcuts</h3><span class="grow"></span><button class="btn sm" onClick="{{onHelp}}">Close</button></div>
+  <div style="display:grid;grid-template-columns:120px 1fr;gap:8px 12px;align-items:center">
+   <sc-for list="{{keys}}" as="k" hint-placeholder-count="6"><span><span class="kbd">{{k.k}}</span></span><span>{{k.d}}</span></sc-for>
+  </div>
+ </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1F5FD0","options":["#1F5FD0","#0B6E8A","#3A4FB8"]}}'>
+//ENGINE-START
+const AP={
+ TBS:{ic:'UGTB',n:'Tbilisi Shota Rustaveli',c:'Georgia',tz:4,la:41.67,lo:44.95},
+ URC:{ic:'ZWWW',n:'Urumqi Diwopu',c:'China',tz:8,la:43.91,lo:87.47},
+ XIY:{ic:'ZLXY',n:'Xi’an Xianyang',c:'China',tz:8,la:34.44,lo:108.75},
+ ALA:{ic:'UAAA',n:'Almaty',c:'Kazakhstan',tz:5,la:43.35,lo:77.04},
+ BEG:{ic:'LYBE',n:'Belgrade Nikola Tesla',c:'Serbia',tz:2,la:44.82,lo:20.29},
+ ATH:{ic:'LGAV',n:'Athens Eleftherios Venizelos',c:'Greece',tz:3,la:37.94,lo:23.94},
+ BUD:{ic:'LHBP',n:'Budapest Ferenc Liszt',c:'Hungary',tz:2,la:47.44,lo:19.26},
+ OTP:{ic:'LROP',n:'Bucharest Henri Coanda',c:'Romania',tz:3,la:44.57,lo:26.09},
+ MXP:{ic:'LIMC',n:'Milan Malpensa',c:'Italy',tz:2,la:45.63,lo:8.72},
+ HKG:{ic:'VHHH',n:'Hong Kong Intl',c:'China (HKSAR)',tz:8,la:22.31,lo:113.91},
+ CCU:{ic:'VECC',n:'Kolkata Netaji Subhas Chandra Bose',c:'India',tz:5.5,la:22.65,lo:88.45},
+ FRL:{ic:'LIPK',n:'Forli Luigi Ridolfi',c:'Italy',tz:2,la:44.19,lo:12.07},
+ DWC:{ic:'OMDW',n:'Dubai Al Maktoum',c:'UAE',tz:4,la:24.90,lo:55.16},
+ XXX:{ic:'XXXX',n:'Provisional (TBD)',c:'Not set',tz:0,la:0,lo:0}
+};
+const REG={PXA:'4L-PXA',PXB:'4L-PXB',PXC:'4L-PXC',PXD:'4L-PXD'};
+const ACS=['PXA','PXB','PXC','PXD'];
+const BAC={PXA:'PXB',PXB:'PXA',PXC:'PXD',PXD:'PXC'};
+const BLOCK={URC:300,XIY:490,ALA:215,BEG:215,ATH:200,BUD:230,OTP:150,MXP:255,FRL:260,HKG:560,CCU:380,DWC:235};
+const KZO=['Kazakhstan','Overflight'],CNL=['China','Landing'];
+const ROUTE={URC:[KZO,CNL],XIY:[KZO,CNL],HKG:[KZO,CNL],ALA:[['Kazakhstan','Landing']],BEG:[['Serbia','Landing']],ATH:[['Greece','Landing']],BUD:[['Hungary','Landing']],OTP:[['Romania','Landing']],MXP:[['Romania','Overflight'],['Hungary','Overflight'],['Italy','Landing']],FRL:[['Romania','Overflight'],['Serbia','Overflight'],['Italy','Landing']],CCU:[KZO,['India','Landing']],DWC:[['UAE','Landing']]};
+const CC={Kazakhstan:'KZ',China:'CN',Serbia:'RS',Greece:'GR',Hungary:'HU',Romania:'RO',Italy:'IT',India:'IN',UAE:'AE'};
+const NOW=-600, URG=2880;
+const BLOCKS=[
+ {id:'B1',ac:'PXD',kind:'AOG',label:'AOG',t0:3*1440,t1:4*1440},
+ {id:'B2',ac:'PXB',kind:'C-Check',label:'C-Check',t0:8*1440,t1:11*1440},
+ {id:'B3',ac:'PXC',kind:'Line maintenance',label:'Line maint.',t0:6*1440,t1:7*1440},
+ {id:'B4',ac:'PXA',kind:'Line maintenance',label:'Line maint.',t0:12*1440,t1:13*1440}
+];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function dayOf(t){return Math.floor(t/1440);}
+function dateOf(d){return new Date(Date.UTC(2026,8,14)+d*864e5);}
+function fmtDate(d){const x=dateOf(d);return x.getUTCDate()+' '+MON[x.getUTCMonth()];}
+function fmtDow(d){return DOW[((d%7)+7)%7]+' '+fmtDate(d);}
+function isoDow(d){return ((d%7)+7)%7+1;}
+function hhmm(m){m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function dur(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function pm(s){const a=String(s).split(':');return (+a[0]||0)*60+(+a[1]||0);}
+function pair(c){return AP[c].ic+'/'+c;}
+function dist(a,b){const R=6371,r=Math.PI/180,A=AP[a],B=AP[b];const dl=(B.la-A.la)*r,dg=(B.lo-A.lo)*r;const h=Math.sin(dl/2)**2+Math.cos(A.la*r)*Math.cos(B.la*r)*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function localDow(l){const m=l.t1+AP[l.arr].tz*60;return isoDow(dayOf(m));}
+function need(d,a){
+ if(a==='XXX'||d==='XXX')return [];
+ if(d==='TBS')return ROUTE[a]||[];
+ if(a==='TBS')return (ROUTE[d]||[]).filter(x=>x[1]==='Overflight');
+ const ld=(ROUTE[d]||[]).filter(x=>x[1]==='Landing').map(x=>x[0]);
+ return (ROUTE[a]||[]).filter(x=>x[1]==='Landing'&&ld.indexOf(x[0])<0);
+}
+function permRow(l,c,tp,status,idx){
+ const no=status==='Pending'?'':'DEMO-'+CC[c]+'-26-'+(1000+((idx*37+c.length*113+tp.length*7)%9000));
+ return {c:c,type:tp,no:no,status:status,from:fmtDate(dayOf(l.t0)-1),to:fmtDate(dayOf(l.t1)+1)};
+}
+function mkPermits(l,idx){
+ const rows=[];
+ need(l.dep,l.arr).forEach(function(n){
+  if(l.nokz&&n[0]==='Kazakhstan'&&n[1]==='Overflight')return;
+  let st='Obtained';
+  if(l.cnl)st='Cancelled';
+  else if(n[1]==='Landing'&&l.pend)st='Pending';
+  else if(dayOf(l.t0)>=12&&(idx+n[1].length)%3===0)st='Pending';
+  rows.push(permRow(l,n[0],n[1],st,idx));
+ });
+ return rows;
+}
+const ROT={
+ PXA:[[0,'06:00','BEG',120],[2,'13:30','ATH',150,'507','508'],[4,'22:45','MXP',210],[6,'08:00','BUD',120,'533','534'],[8,'07:00','OTP',120],[9,'20:30','FRL',180],[11,'10:00','BEG',150],[13,'06:00','ATH',150],[15,'09:00','BUD',120,null,null,{cnl:1}],[17,'07:30','OTP',120],[19,'12:00','MXP',180]],
+ PXB:[[0,'04:00','ALA',150,null,null,{pend:1}],[1,'08:00','BEG',120],[2,'09:00','ATH',600,'507D','508D',{tele:'ALA'}],[4,'06:00','BEG',150],[5,'10:00','OTP',120],[6,'12:00','DWC',150,'533','538'],[7,'08:00','BEG',120],[11,'06:00','BUD',150],[12,'07:00','OTP',120],[13,'14:00','ATH',150],[15,'07:00','OTP',150],[16,'08:00','BEG',120],[17,'09:00','MXP',180],[18,'07:00','OTP',120]],
+ PXC:[[0,'12:00','ALA',150],['T',2,'02:00','611','612'],[4,'05:00','CCU',240],[7,'18:00','HKG',240],[10,'06:00','URC',180,null,null,{nokz:1}],[12,'12:00','ALA',150],['T',14,'02:00','613','614'],[17,'05:00','CCU',240],[19,'18:00','HKG',240]],
+ PXD:[[0,'03:30','URC',180,null,null,{pend:1}],[2,'05:00','DWC',120],[3,'10:00','ALA',120],[5,'12:00','HKG',240],[8,'02:00','URC',180],[10,'07:00','MXP',180],[12,'05:00','DWC',150],[14,'20:00','URC',180],[17,'08:00','HKG',240],[19,'09:00','BEG',150]]
+};
+function seed(){
+ const legs=[];let nid=1,auto=501;
+ const used=new Set(['507','508','533','534','538','611','612','613','614']);
+ const nf=function(){while(used.has(String(auto))||used.has(String(auto+1)))auto+=2;const f=auto;auto+=2;return f;};
+ const add=function(o){const l=Object.assign({id:'L'+String(nid++).padStart(3,'0'),type:'Landing',notes:'',cnl:false,thru:null},o);legs.push(l);return l;};
+ ACS.forEach(function(ac){
+  ROT[ac].forEach(function(r,ri){
+   const rot=ac+'-'+ri;
+   if(r[0]==='T'){
+    const d=r[1],b=d*1440+pm(r[2]);
+    const x=[['TBS','URC',b,300],['URC','XIY',b+390,190],['XIY','URC',b+390+190+150,190],['URC','TBS',b+390+190+150+190+90,300]];
+    x.forEach(function(s,i){add({fn:'PHC'+(i<2?r[3]:r[4]),ac:ac,bac:BAC[ac],dep:s[0],arr:s[1],t0:s[2],t1:s[2]+s[3],rot:rot,thru:'T'+(i<2?r[3]:r[4]),notes:i%2===0?'Through flight, one flight number across consecutive stops':''});});
+    return;
+   }
+   const o=r[6]||{},dest=r[2],b=r[0]*1440+pm(r[1]),bl=BLOCK[dest];
+   const fo=r[4]||('PHC'+(function(){const f=nf();used.add(String(f));return f;})());
+   const fr=r[5]||null;
+   const fOut=r[4]?'PHC'+r[4]:fo;
+   const base=r[4]?parseInt(r[4],10):parseInt(fo.slice(3),10);
+   const fRet=r[5]?'PHC'+r[5]:'PHC'+(base+1);
+   const rds=o.tele||dest,rb=BLOCK[rds],t1=b+bl,rd=t1+r[3];
+   add({fn:fOut,ac:ac,bac:BAC[ac],dep:'TBS',arr:dest,t0:b,t1:t1,rot:rot,cnl:!!o.cnl,pend:!!o.pend,nokz:!!o.nokz});
+   add({fn:fRet,ac:ac,bac:BAC[ac],dep:rds,arr:'TBS',t0:rd,t1:rd+rb,rot:rot,cnl:!!o.cnl,notes:o.tele?'Return positioning from alternate station':''});
+  });
+ });
+ add({fn:'FERRY1',ac:'PXD',bac:'PXC',type:'Ferry',dep:'TBS',arr:'XXX',t0:20*1440+18*60,t1:20*1440+18*60+180,rot:'PXD-F',notes:'Destination TBD, slot pending with maintenance provider'});
+ const permits={};
+ legs.forEach(function(l,i){permits[l.id]=mkPermits(l,i);});
+ return {legs:legs,permits:permits};
+}
+function syncPermits(l,rows,idx){
+ const out=[];
+ need(l.dep,l.arr).forEach(function(n){
+  const ex=(rows||[]).find(function(r){return r.c===n[0]&&r.type===n[1];});
+  out.push(ex||permRow(l,n[0],n[1],'Pending',idx||7));
+ });
+ return out;
+}
+function analyze(legs,blocks,permits){
+ const out=[],act=legs.filter(function(l){return !l.cnl;});
+ const g={};
+ act.forEach(function(l){const k=l.fn+'@'+dayOf(l.t0);(g[k]=g[k]||[]).push(l);});
+ Object.keys(g).forEach(function(k){
+  const a=g[k],acs=a.map(function(x){return x.ac;}).filter(function(v,i,s){return s.indexOf(v)===i;});
+  if(acs.length>1){
+   const f=a.find(function(x){return x.ac!==a[0].ac;});
+   out.push({id:'fn|'+f.id,type:'fn',sev:'error',legId:f.id,ac:f.ac,t:f.t0,msg:f.fn+' is used by '+acs.map(function(c){return REG[c];}).join(' and ')+' on '+fmtDow(dayOf(f.t0)),fixes:[{k:'dsuffix',legId:f.id,label:'Add D suffix',hint:f.fn+' becomes '+f.fn+'D'}]});
+  }
+ });
+ ACS.forEach(function(ac){
+  const L=act.filter(function(l){return l.ac===ac;}).sort(function(a,b){return a.t0-b.t0;});
+  for(let i=1;i<L.length;i++){
+   const p=L[i-1],c=L[i];
+   if(c.t0<p.t1){
+    out.push({id:'ov|'+c.id,type:'overlap',sev:'error',legId:c.id,ac:ac,t:c.t0,msg:c.fn+' departs '+hhmm(c.t0)+'Z before '+p.fn+' arrives '+hhmm(p.t1)+'Z on '+REG[ac],fixes:[{k:'shift',legId:c.id,prevId:p.id,label:'Shift '+c.fn+' after '+p.fn}]});
+   }else if(p.arr!=='XXX'&&c.dep!=='XXX'&&p.arr!==c.dep){
+    out.push({id:'ct|'+c.id,type:'cont',sev:'error',legId:c.id,ac:ac,t:c.t0,msg:REG[ac]+' lands at '+p.arr+' ('+p.fn+') but next departs from '+c.dep+' ('+c.fn+')',fixes:[{k:'ferry',legId:c.id,prevId:p.id,label:'Insert ferry leg '+p.arr+' to '+c.dep},{k:'editnext',legId:c.id,prevId:p.id,label:'Edit next departure to '+p.arr}]});
+   }
+  }
+ });
+ act.forEach(function(l){
+  blocks.filter(function(b){return b.ac===l.ac&&l.t0<b.t1&&l.t1>b.t0;}).forEach(function(b){
+   if(out.some(function(o){return o.type==='unav'&&o.rotKey===l.rot+b.id;}))return;
+   out.push({rotKey:l.rot+b.id,id:'un|'+l.id,type:'unav',sev:'error',legId:l.id,ac:l.ac,t:l.t0,msg:l.fn+' is scheduled on '+REG[l.ac]+' during '+b.kind+' ('+fmtDate(dayOf(b.t0))+(dayOf(b.t1-1)>dayOf(b.t0)?' to '+fmtDate(dayOf(b.t1-1)):'')+')',fixes:[{k:'reassign',legId:l.id,label:'Move rotation to '+REG[l.bac]}]});
+  });
+  const rows=permits[l.id]||[];
+  const miss=need(l.dep,l.arr).filter(function(n){return !rows.some(function(r){return r.c===n[0]&&r.type===n[1];});});
+  if(miss.length){
+   out.push({id:'pm|'+l.id,type:'permit',sev:'error',legId:l.id,ac:l.ac,t:l.t0,msg:'No '+miss.map(function(n){return n[0]+' '+n[1].toLowerCase();}).join(', ')+' permit on '+l.fn+' ('+l.dep+' to '+l.arr+')',fixes:[{k:'permadd',legId:l.id,label:'Add permit request'}]});
+  }
+  const urg=rows.filter(function(r){return r.status==='Pending'&&l.t0>=NOW&&l.t0<NOW+URG;});
+  if(urg.length){
+   out.push({id:'ug|'+l.id,type:'permit',sev:'error',legId:l.id,ac:l.ac,t:l.t0,msg:urg.map(function(r){return r.c+' '+r.type.toLowerCase();}).join(', ')+' permit still pending, '+l.fn+' departs in '+Math.max(1,Math.round((l.t0-NOW)/60))+' h',fixes:[{k:'permobt',legId:l.id,label:'Mark obtained'}]});
+  }
+ });
+ return out.sort(function(a,b){return a.t-b.t;});
+}
+function applyFix(S,f){
+ let legs=S.legs.map(function(l){return Object.assign({},l);}),permits=Object.assign({},S.permits);
+ const by=function(id){return legs.find(function(l){return l.id===id;});};
+ const l=by(f.legId);
+ if(f.k==='dsuffix'){l.fn=l.fn.replace(/D$/,'')+'D';}
+ else if(f.k==='editnext'){const p=by(f.prevId);l.dep=p.arr;permits[l.id]=syncPermits(l,permits[l.id],legs.indexOf(l));}
+ else if(f.k==='ferry'){
+  const p=by(f.prevId),bl=Math.round(dist(p.arr,l.dep)/780*60)+25;
+  let t0=p.t1+90;if(t0+bl>l.t0-30)t0=Math.max(p.t1+20,l.t0-30-bl);
+  const nl={id:'F'+String(legs.length+1).padStart(3,'0'),fn:'PHC9'+String(legs.length%90+10)+'F',ac:l.ac,bac:l.bac,type:'Ferry',dep:p.arr,arr:l.dep,t0:t0,t1:t0+bl,rot:l.rot,cnl:false,thru:null,notes:'Positioning flight inserted by validation fix'};
+  legs.push(nl);permits[nl.id]=syncPermits(nl,[],legs.length);
+ }
+ else if(f.k==='reassign'){legs.forEach(function(x){if(x.rot===l.rot&&x.ac===l.ac){const o=x.ac;x.ac=x.bac;x.bac=o;}});}
+ else if(f.k==='permadd'){permits[l.id]=syncPermits(l,permits[l.id],legs.indexOf(l));}
+ else if(f.k==='permobt'){permits[l.id]=(permits[l.id]||[]).map(function(r){return r.status==='Pending'?Object.assign({},r,{status:'Obtained',no:'DEMO-'+CC[r.c]+'-26-'+(2100+legs.indexOf(l))}):r;});}
+ else if(f.k==='shift'){const p=by(f.prevId),b=l.t1-l.t0;l.t0=p.t1+60;l.t1=l.t0+b;}
+ return {legs:legs,permits:permits};
+}
+//ENGINE-END
+const FLEET0=[
+ {reg:'4L-PXA',ac:'PXA',type:'B737-800SF',ser:'35105',mfg:'2005',mtow:'79,015',pay:'23,000',st:'Active'},
+ {reg:'4L-PXB',ac:'PXB',type:'B737-800BCF',ser:'33981',mfg:'2003',mtow:'79,015',pay:'23,000',st:'Active'},
+ {reg:'4L-PXC',ac:'PXC',type:'B767-300ER',ser:'29230',mfg:'1998',mtow:'186,880',pay:'56,000',st:'Active'},
+ {reg:'4L-PXD',ac:'PXD',type:'B767-300ER',ser:'',mfg:'',mtow:'186,880',pay:'56,000',st:'AOG'}
+];
+function parseSta(s){
+ s=String(s||'').trim().toUpperCase();if(!s)return null;
+ if(s.indexOf('/')>=0){const a=s.split('/');if(a[0]==='XXXX'||a[1]==='XXX')return 'XXX';s=a[1];}
+ if(s==='XXXX'||s==='XXX')return 'XXX';
+ if(AP[s]&&s!=='XXX')return s;
+ const k=Object.keys(AP).find(function(c){return AP[c].ic===s;});
+ return k||null;
+}
+function pstat(l,rows){
+ if(l.cnl)return {cls:'b b-cn',txt:'Cancelled',k:'cn'};
+ const miss=need(l.dep,l.arr).some(function(n){return !(rows||[]).some(function(r){return r.c===n[0]&&r.type===n[1];});});
+ if(miss)return {cls:'b b-er',txt:'Missing',k:'mi'};
+ if((rows||[]).some(function(r){return r.status==='Pending'&&l.t0>=NOW&&l.t0<NOW+URG;}))return {cls:'b b-ur',txt:'Urgent <48h',k:'ur'};
+ if((rows||[]).some(function(r){return r.status==='Pending';}))return {cls:'b b-pe',txt:'Pending',k:'pe'};
+ if((rows||[]).length)return {cls:'b b-ok',txt:'Obtained',k:'ok'};
+ return {cls:'b b-nt',txt:'No permit needed',k:'no'};
+}
+const TYPE_LBL={fn:'Flight number conflict',cont:'Station continuity',unav:'Aircraft unavailable',permit:'Permit risk',overlap:'Overlapping legs'};
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const S0=seed();
+    this.state={screen:'dash',theme:'light',lay:'table',cal:'dates',tab:'all',fType:'all',fSta:'all',fFn:'',fStat:'all',week:'all',gw:0,legs:S0.legs,permits:S0.permits,panel:null,sel:[],toasts:[],help:false,sim:'normal',hl:null,q:'',menu:false,banner:true,pf:'all',pcn:'all',cf:'all',fleet:FLEET0,fd:null,apq:'',imp:{ph:0,pct:0,fx:[]},ck:'',ban:null,company:{name:'Phasis Air Cargo',hdr:'Phasis Air Cargo, Flight Operations. This checklist is valid only for the legs listed below.'}};
+    this.tid=1;this.vis=[];
+    this.rootRef=(el)=>{this.rootEl=el;};
+    this.srchRef=(el)=>{this.srchEl=el;};
+  }
+  toast(m,k){
+    const id=this.tid++;
+    this.setState({toasts:this.state.toasts.concat([{id:id,m:m,cls:'toast '+(k||'in')}])});
+    setTimeout(()=>{this.setState({toasts:this.state.toasts.filter(function(t){return t.id!==id;})});},k==='er'?4600:3200);
+  }
+  go(s){this.setState({screen:s,menu:false,sim:'normal'});}
+  reset(){const S0=seed();this.setState({legs:S0.legs,permits:S0.permits,sel:[],panel:null,fleet:FLEET0,hl:null,imp:{ph:0,pct:0,fx:[]},sim:'normal'});this.toast('Demo data restored','ok');}
+  fix(f){
+    const r=applyFix({legs:this.state.legs,permits:this.state.permits},f);
+    this.setState({legs:r.legs,permits:r.permits});
+    this.toast(f.label+' applied. Conflict cleared.','ok');
+  }
+  draftFrom(l){return {id:l.id,isNew:false,fn:l.fn,ac:l.ac,bac:l.bac,type:l.type,dep:pair(l.dep),arr:pair(l.arr),day:dayOf(l.t0),etd:hhmm(l.t0),eta:hhmm(l.t1),notes:l.notes||'',cnl:l.cnl};}
+  openLeg(id){const l=this.state.legs.find(function(x){return x.id===id;});if(!l)return;this.setState({panel:{d:this.draftFrom(l)},hl:id});}
+  goLeg(id){const l=this.state.legs.find(function(x){return x.id===id;});if(!l)return;this.setState({screen:'sched',sim:'normal',tab:'all',fType:'all',fSta:'all',fFn:'',fStat:'all',week:Math.floor(dayOf(l.t0)/7),gw:Math.floor(dayOf(l.t0)/7),panel:{d:this.draftFrom(l)},hl:id});}
+  openNew(){
+    const w=this.state.week==='all'?0:this.state.week;
+    const id='N'+(this.tid++);
+    this.setState({screen:'sched',panel:{d:{id:id,isNew:true,fn:'PHC',ac:'PXA',bac:'PXB',type:'Landing',dep:'UGTB/TBS',arr:'',day:w*7,etd:'08:00',eta:'12:00',notes:'',cnl:false}}});
+  }
+  fld(k){
+    return (e)=>{
+      const v=e.target.type==='checkbox'?e.target.checked:e.target.value;
+      const p=this.state.panel;if(!p)return;
+      this.setState({panel:{d:Object.assign({},p.d,{[k]:v})}});
+    };
+  }
+  draftLeg(d){
+    const old=this.state.legs.find(function(x){return x.id===d.id;})||{};
+    const t0=(+d.day)*1440+pm(d.etd);
+    let b=(pm(d.eta)-pm(d.etd)+1440)%1440;
+    return Object.assign({},old,{id:d.id,fn:String(d.fn||'').toUpperCase(),ac:d.ac,bac:d.bac===d.ac?BAC[d.ac]:d.bac,type:d.type,dep:parseSta(d.dep)||'XXX',arr:parseSta(d.arr)||'XXX',t0:t0,t1:t0+b,cnl:!!d.cnl,notes:d.notes,rot:old.rot||('X-'+d.id)});
+  }
+  tentative(){
+    const p=this.state.panel;if(!p)return null;
+    const nl=this.draftLeg(p.d);
+    const legs=this.state.legs.filter(function(x){return x.id!==nl.id;}).concat([nl]);
+    const permits=Object.assign({},this.state.permits);
+    permits[nl.id]=nl.cnl?(permits[nl.id]||[]).map(function(r){return Object.assign({},r,{status:'Cancelled'});}):syncPermits(nl,(permits[nl.id]||[]).filter(function(r){return r.status!=='Cancelled';}),legs.length);
+    return {legs:legs,permits:permits,leg:nl};
+  }
+  savePanel(){
+    const T=this.tentative();if(!T)return;
+    if(!T.leg.fn||T.leg.fn==='PHC'){this.toast('Enter a flight number first','er');return;}
+    this.setState({legs:T.legs,permits:T.permits,panel:null,hl:T.leg.id});
+    this.toast('Leg '+T.leg.fn+' saved','ok');
+  }
+  panelFix(f){
+    const T=this.tentative();if(!T)return;
+    const r=applyFix({legs:T.legs,permits:T.permits},f);
+    const nl=r.legs.find(function(x){return x.id===T.leg.id;});
+    this.setState({legs:r.legs,permits:r.permits,panel:{d:this.draftFrom(nl)}});
+    this.toast(f.label+' applied','ok');
+  }
+  toggleSel(id){const s=this.state.sel;this.setState({sel:s.indexOf(id)>=0?s.filter(function(x){return x!==id;}):s.concat([id])});}
+  toggleCnl(id){
+    const legs=this.state.legs.map(function(l){return l.id===id?Object.assign({},l,{cnl:!l.cnl}):l;});
+    const l=legs.find(function(x){return x.id===id;});
+    const permits=Object.assign({},this.state.permits);
+    permits[id]=l.cnl?(permits[id]||[]).map(function(r){return Object.assign({},r,{status:'Cancelled'});}):syncPermits(l,[],legs.indexOf(l));
+    this.setState({legs:legs,permits:permits});
+    this.toast(l.cnl?l.fn+' cancelled. Kept in history, excluded from daily counts.':l.fn+' reinstated. Permits re-requested as Pending.','in');
+  }
+  onKey(e){
+    const t=e.target&&e.target.tagName,typing=t==='INPUT'||t==='TEXTAREA'||t==='SELECT',s=this.state;
+    if(e.key==='Escape'){
+      if(s.help)this.setState({help:false});else if(s.panel)this.setState({panel:null});else if(s.fd)this.setState({fd:null});else if(s.menu)this.setState({menu:false});
+      return;
+    }
+    if(typing)return;
+    if(e.key==='?'){e.preventDefault();this.setState({help:!s.help});return;}
+    if(e.key==='/'){e.preventDefault();if(this.srchEl)this.srchEl.focus();return;}
+    if(e.key==='n'||e.key==='N'){e.preventDefault();this.openNew();return;}
+    if(s.screen==='sched'&&this.vis.length&&!s.panel){
+      const i=this.vis.indexOf(s.hl);
+      if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();this.setState({hl:this.vis[Math.min(this.vis.length-1,i+1)]});}
+      else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();this.setState({hl:this.vis[Math.max(0,i-1)]});}
+      else if(e.key==='Enter'&&s.hl&&t!=='BUTTON'){this.openLeg(s.hl);}
+    }
+  }
+  legVM(l,iss){
+    const S=this.state,rows=S.permits[l.id]||[],ps=pstat(l,rows),plus=dayOf(l.t1)>dayOf(l.t0),ap=AP[l.arr];
+    const tipL=['Block time '+dur(l.t1-l.t0)+'  ('+hhmm(l.t0)+'Z to '+hhmm(l.t1)+'Z'+(plus?' +1':'')+')',AP[l.dep].n+' to '+ap.n,'Arrives '+hhmm(l.t1+ap.tz*60)+' LT, ISO weekday '+localDow(l)+' local',REG[l.ac]+(l.thru?'  |  Through flight '+l.thru.slice(1):'')];
+    return {id:l.id,fn:l.fn,pair:pair(l.dep)+' > '+pair(l.arr),times:hhmm(l.t0)+'Z > '+hhmm(l.t1)+'Z',plus:plus,lt:'DAY '+localDow(l)+' LT',pcls:ps.cls,ptxt:ps.txt,tip:tipL,thru:!!l.thru,thruTag:l.thru?'THRU '+l.thru.slice(1):'',
+      cls:'leg'+(l.cnl?' cnl':'')+(S.sel.indexOf(l.id)>=0?' sel':'')+(S.hl===l.id?' hl':'')+(iss[l.id]?' iss':'')+(l.thru?' thru':''),
+      cnl:l.cnl,sel:S.sel.indexOf(l.id)>=0,cnlTxt:l.cnl?'Restore':'CNL',
+      open:()=>this.openLeg(l.id),toggle:()=>this.toggleSel(l.id),cnlT:()=>this.toggleCnl(l.id),isLeg:true,isBlk:false};
+  }
+  renderVals() {
+    const S=this.state,V={};
+    V.accent=this.props.accent??'#1F5FD0';V.theme=S.theme;V.rootRef=this.rootRef;V.srchRef=this.srchRef;
+    V.onKey=(e)=>this.onKey(e);
+    const issues=analyze(S.legs,BLOCKS,S.permits);
+    const issBy={};issues.forEach(function(i){issBy[i.legId]=true;});
+    const sc=S.screen;
+    ['dash','sched','conf','perm','chk','fleet','ap','co','imp'].forEach(function(k){V['s_'+k]=sc===k;});
+    const NAV=[['dash','Dashboard'],['sched','Schedule'],['conf','Conflicts'],['perm','Permits'],['chk','Checklists'],['fleet','Fleet'],['ap','Airports'],['co','Company'],['imp','Import']];
+    V.navs=NAV.map((n)=>({label:n[1],cls:'navb'+(sc===n[0]?' on':''),go:()=>this.go(n[0]),cnt:n[0]==='conf'?issues.length:0,hasCnt:n[0]==='conf'&&issues.length>0}));
+    V.simOn=S.sim!=='normal'&&sc!=='co'&&sc!=='imp';
+    V.showContent=!V.simOn;
+    V.simLoading=V.simOn&&S.sim==='loading';V.simError=V.simOn&&S.sim==='error';V.simEmpty=V.simOn&&S.sim==='empty';
+    V.skelRows=[1,2,3,4,5,6];
+    V.retry=()=>{this.setState({sim:'normal'});this.toast('Reconnected. Data reloaded.','ok');};
+    V.banner=S.banner;V.closeBanner=()=>this.setState({banner:false});V.onReset=()=>this.reset();
+    V.themeLbl=S.theme==='light'?'Dark theme':'Light theme';
+    V.onTheme=()=>this.setState({theme:S.theme==='light'?'dark':'light'});
+    V.menu=S.menu;V.onMenu=()=>this.setState({menu:!S.menu});
+    V.simOpts=[['normal','Normal data'],['loading','Show loading state'],['empty','Show empty state'],['error','Show error state']].map((o)=>({lbl:o[1],cls:'btn sm'+(S.sim===o[0]?' pri':''),on:()=>this.setState({sim:o[0],menu:false})}));
+    V.toasts=S.toasts;
+    V.help=S.help;V.onHelp=()=>this.setState({help:!S.help});
+    V.keys=[['N','New leg'],['/','Focus search'],['Arrow keys','Move between legs on the Schedule'],['Enter','Open the highlighted leg'],['Esc','Close panel, menu or this sheet'],['?','Show this sheet']].map(function(k){return {k:k[0],d:k[1]};});
+    V.q=S.q;
+    V.onQ=(e)=>this.setState({q:e.target.value});
+    V.onQKey=(e)=>{
+      if(e.key!=='Enter')return;
+      const q=S.q.trim().toUpperCase();if(!q)return;
+      const sta=parseSta(q);
+      const tail=ACS.find(function(c){return REG[c].indexOf(q)>=0||c===q;});
+      const upd={screen:'sched',sim:'normal',tab:'all',fType:'all',fSta:'all',fFn:'',fStat:'all'};
+      if(tail){upd.tab=tail;}else if(sta&&sta!=='XXX'&&sta!=='TBS'){upd.fSta=sta;}else{upd.fFn=q;}
+      this.setState(upd);
+    };
+    V.wkVal=String(S.week);
+    V.onWeek=(e)=>{const v=e.target.value;this.setState({week:v==='all'?'all':+v,gw:v==='all'?S.gw:+v});};
+    V.rangeLbl=S.week==='all'?fmtDate(0)+' to '+fmtDate(20):fmtDate(S.week*7)+' to '+fmtDate(S.week*7+6);
+    V.issCount=issues.length;
+    const act=S.legs.filter(function(l){return !l.cnl;});
+    const wk0=act.filter(function(l){return dayOf(l.t0)<7;}).length,cn0=S.legs.filter(function(l){return l.cnl&&dayOf(l.t0)<7;}).length;
+    const avlNow=ACS.filter(function(a){return !BLOCKS.some(function(b){return b.ac===a&&b.t0<1440&&b.t1>0;});}).length;
+    let bd=0;BLOCKS.forEach(function(b){const s=Math.max(0,dayOf(b.t0)),e=Math.min(14,dayOf(b.t1-1)+1);bd+=Math.max(0,e-s);});
+    let pendN=0,urgN=0;
+    act.forEach(function(l){(S.permits[l.id]||[]).forEach(function(r){if(r.status==='Pending'){pendN++;if(l.t0>=NOW&&l.t0<NOW+URG)urgN++;}});});
+    V.kpis=[
+     {label:'Flights this week',val:wk0,sub:'14 to 20 Sep'+(cn0?', '+cn0+' cancelled':''),cls:'kpi'},
+     {label:'Aircraft available',val:avlNow+' / 4',sub:'Today, Mon 14 Sep',cls:'kpi'},
+     {label:'AOG and maintenance days',val:bd,sub:'Next 14 days, all aircraft',cls:'kpi'+(bd>0?' warn':'')},
+     {label:'Permits pending',val:pendN,sub:'Across active legs',cls:'kpi'+(pendN>0?' warn':'')},
+     {label:'Permits urgent (<48h)',val:urgN,sub:'Departing within 48 hours',cls:'kpi'+(urgN>0?' bad':'')},
+     {label:'Open conflicts',val:issues.length,sub:'See Conflicts screen',cls:'kpi'+(issues.length>0?' bad':'')}
+    ];
+    V.attn=issues.slice(0,8).map((i)=>({
+     tcls:i.id.indexOf('ug|')===0?'b b-ur':'b b-er',tlbl:i.id.indexOf('ug|')===0?'Urgent':'Error',type:TYPE_LBL[i.type],msg:i.msg,reg:REG[i.ac],when:fmtDow(dayOf(i.t))+' '+hhmm(i.t)+'Z',go:()=>this.goLeg(i.legId)}));
+    V.attnAll=issues.length>8;V.attnNone=issues.length===0;V.toConf=()=>this.go('conf');
+    V.avlDays=[];for(let d=0;d<14;d++)V.avlDays.push({n:dateOf(d).getUTCDate(),w:DOW[d%7].slice(0,1)});
+    V.avl=ACS.map(function(a){
+     const f=FLEET0.find(function(x){return x.ac===a;});
+     const cells=[];
+     for(let d=0;d<14;d++){
+      const b=BLOCKS.find(function(x){return x.ac===a&&x.t0<(d+1)*1440&&x.t1>d*1440;});
+      cells.push({cls:b?(b.kind==='AOG'?'a':'m'):'',ttl:REG[a]+', '+fmtDow(d)+': '+(b?b.kind:'available'),lbl:b?b.kind:'available'});
+     }
+     return {reg:REG[a],type:f.type,cells:cells};
+    });
+    const typeOf=function(ac){const f=S.fleet.find(function(x){return x.ac===ac;});return f?f.type:'';};
+    V.tabs=[{label:'All aircraft',cls:S.tab==='all'?'on':'',on:()=>this.setState({tab:'all'})}].concat(S.fleet.map((f)=>({label:f.reg,cls:S.tab===f.ac?'on':'',on:()=>this.setState({tab:f.ac})})));
+    V.fType=S.fType;V.onFType=(e)=>this.setState({fType:e.target.value});
+    V.fSta=S.fSta;V.onFSta=(e)=>this.setState({fSta:e.target.value});
+    V.fFn=S.fFn;V.onFFn=(e)=>this.setState({fFn:e.target.value});
+    V.fStat=S.fStat;V.onFStat=(e)=>this.setState({fStat:e.target.value});
+    V.clearF=()=>this.setState({fType:'all',fSta:'all',fFn:'',fStat:'all',tab:'all'});
+    V.layT=S.lay==='table';V.layG=S.lay==='gantt';
+    V.setTable=()=>this.setState({lay:'table'});V.setGantt=()=>this.setState({lay:'gantt'});
+    V.calD=S.cal==='dates';V.calW=S.cal==='days';
+    V.setCalD=()=>this.setState({cal:'dates'});V.setCalW=()=>this.setState({cal:'days'});
+    V.layTc=S.lay==='table'?'on':'';V.layGc=S.lay==='gantt'?'on':'';V.calDc=S.cal==='dates'?'on':'';V.calWc=S.cal==='days'?'on':'';
+    const rngA=S.week==='all'?0:S.week*7,rngB=S.week==='all'?20:S.week*7+6;
+    const L=S.legs.filter(function(l){
+     if(S.tab!=='all'&&l.ac!==S.tab)return false;
+     if(S.fType!=='all'&&typeOf(l.ac)!==S.fType)return false;
+     if(S.fSta!=='all'&&l.dep!==S.fSta&&l.arr!==S.fSta)return false;
+     if(S.fFn&&l.fn.indexOf(S.fFn.toUpperCase())<0)return false;
+     if(S.fStat==='cnl'&&!l.cnl)return false;
+     if(S.fStat==='issue'&&!issBy[l.id])return false;
+     if(S.fStat==='pending'){const k=pstat(l,S.permits[l.id]).k;if(k!=='pe'&&k!=='ur'&&k!=='mi')return false;}
+     if(S.fStat==='obtained'&&pstat(l,S.permits[l.id]).k!=='ok')return false;
+     return true;
+    });
+    const cols=S.fleet.filter(function(f){return (S.tab==='all'||S.tab===f.ac)&&(S.fType==='all'||S.fType===f.type);});
+    V.cols=cols.map(function(f){return {reg:f.reg,type:f.type};});
+    V.colW=cols.length===1?'520px':'250px';
+    const vis=[];
+    const days=[];
+    for(let d=rngA;d<=rngB;d++){
+     const dl=L.filter(function(l){return dayOf(l.t0)===d;});
+     days.push({
+      lbl:S.cal==='dates'?fmtDate(d):fmtDow(d),sub:S.cal==='days'?'ISO weekday '+isoDow(d):DOW[((d%7)+7)%7],
+      cnt:dl.filter(function(l){return !l.cnl;}).length,cls:'daycol'+(d===0?' today':''),
+      cells:cols.map((f)=>{
+       const items=[];
+       BLOCKS.filter(function(b){return b.ac===f.ac&&b.t0<(d+1)*1440&&b.t1>d*1440;}).forEach(function(b){
+        const n=dayOf(b.t1-1)-dayOf(b.t0)+1;
+        items.push({isBlk:true,isLeg:false,txt:b.kind==='AOG'?'AOG, aircraft on ground, all day':b.kind+(n>1?', day '+(d-dayOf(b.t0)+1)+' of '+n:', all day')});
+       });
+       dl.filter(function(l){return l.ac===f.ac;}).sort(function(a,b){return a.t0-b.t0;}).forEach((l)=>{vis.push(l);items.push(this.legVM(l,issBy));});
+       return {items:items};
+      })
+     });
+    }
+    vis.sort(function(a,b){return a.t0-b.t0;});
+    this.vis=vis.map(function(l){return l.id;});
+    V.days=days;
+    V.noLegs=L.filter(function(l){const d=dayOf(l.t0);return d>=rngA&&d<=rngB;}).length===0;
+    V.legTotal=L.filter(function(l){const d=dayOf(l.t0);return d>=rngA&&d<=rngB&&!l.cnl;}).length;
+    V.selN=S.sel.length;V.hasSel=S.sel.length>0;V.clearSel=()=>this.setState({sel:[]});V.toChk=()=>this.go('chk');
+    V.addLeg=()=>this.openNew();
+    V.gwTabs=[0,1,2].map((w)=>({label:'Week '+(w+1)+', '+fmtDate(w*7),cls:S.gw===w?'on':'',on:()=>this.setState({gw:w,week:w})}));
+    const w0=S.gw*7*1440,W=7*1440;
+    V.gdays=[];for(let i=0;i<7;i++)V.gdays.push({lbl:S.cal==='dates'?fmtDate(S.gw*7+i):fmtDow(S.gw*7+i)});
+    V.grows=cols.map((f)=>{
+     const bars=L.filter(function(l){return l.ac===f.ac&&l.t0<w0+W&&l.t1>w0;}).map((l)=>{
+      const a=Math.max(l.t0,w0),b=Math.min(l.t1,w0+W);
+      return {id:l.id,fn:l.fn,pair:l.dep+'>'+l.arr,tip:[l.fn+' '+pair(l.dep)+' > '+pair(l.arr),hhmm(l.t0)+'Z > '+hhmm(l.t1)+'Z, block '+dur(l.t1-l.t0),'Drag to another row or time to re-plan'],
+       left:((a-w0)/W*100)+'%',w:Math.max(2.2,(b-a)/W*100)+'%',cls:'gbar mono'+(l.cnl?' cnl':'')+(issBy[l.id]?' iss':''),
+       open:()=>this.openLeg(l.id),
+       start:(e)=>{this.dragId=l.id;if(e.dataTransfer){e.dataTransfer.setData('text/plain',l.id);e.dataTransfer.effectAllowed='move';}}};
+     });
+     const blks=BLOCKS.filter(function(b){return b.ac===f.ac&&b.t0<w0+W&&b.t1>w0;}).map(function(b){
+      const a=Math.max(b.t0,w0),e=Math.min(b.t1,w0+W);
+      return {txt:b.kind==='AOG'?'AOG':b.kind,cls:'gblk'+(S.ban===b.id?' ban':''),left:((a-w0)/W*100)+'%',w:((e-a)/W*100)+'%'};
+     });
+     return {reg:f.reg,type:f.type,bars:bars,blks:blks,over:(e)=>{e.preventDefault();},
+      drop:(e)=>{
+       e.preventDefault();
+       const id=this.dragId;if(!id)return;
+       const l=S.legs.find(function(x){return x.id===id;});if(!l)return;
+       const r=e.currentTarget.getBoundingClientRect();
+       const fr=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+       const t0=Math.round((w0+fr*W)/15)*15,t1=t0+(l.t1-l.t0);
+       const blk=BLOCKS.find(function(x){return x.ac===f.ac&&t0<x.t1&&t1>x.t0;});
+       this.dragId=null;
+       if(blk){this.toast('Blocked: '+f.reg+' is in '+blk.kind+' on '+fmtDate(dayOf(blk.t0))+'. '+l.fn+' was not moved.','er');this.setState({ban:blk.id});setTimeout(()=>this.setState({ban:null}),1800);return;}
+       this.setState({legs:S.legs.map(function(x){return x.id===id?Object.assign({},x,{ac:f.ac,bac:BAC[f.ac],t0:t0,t1:t1}):x;})});
+       this.toast(l.fn+' moved to '+f.reg+', ETD '+hhmm(t0)+'Z '+fmtDate(dayOf(t0)),'ok');
+      }};
+    });
+    V.panelOpen=!!S.panel;V.closePanel=()=>this.setState({panel:null});
+    if(S.panel){
+     const d=S.panel.d,T=this.tentative(),nl=T.leg;
+     V.pd=d;V.pTitle=d.isNew?'New leg':'Leg '+(d.fn||'');
+     V.pf={};['fn','ac','bac','type','dep','arr','etd','eta','notes'].forEach((k)=>{V.pf[k]=this.fld(k);});
+     V.pf.cnl=()=>{this.setState({panel:{d:Object.assign({},d,{cnl:!d.cnl})}});};
+     V.cnlOn=!!d.cnl;
+     V.dateVal=dateOf(+d.day).toISOString().slice(0,10);
+     V.onDate=(e)=>{const p=String(e.target.value).split('-');if(p.length!==3)return;const n=Math.round((Date.UTC(+p[0],+p[1]-1,+p[2])-Date.UTC(2026,8,14))/864e5);if(isNaN(n))return;this.setState({panel:{d:Object.assign({},d,{day:Math.max(0,Math.min(20,n))})}});};
+     const ds=parseSta(d.dep),as=parseSta(d.arr);
+     V.dFmt=ds?pair(ds):'Station not found';V.aFmt=String(d.arr||'').trim()===''?'Not set':(as?pair(as):'Station not found');
+     V.blockTxt=dur(nl.t1-nl.t0);V.plus=dayOf(nl.t1)>dayOf(nl.t0);V.arrWhen=fmtDow(dayOf(nl.t1))+' '+hhmm(nl.t1)+'Z';
+     V.ltTxt='DAY '+localDow(nl)+' LT, '+hhmm(nl.t1+AP[nl.arr].tz*60)+' local';
+     V.addD=()=>{this.setState({panel:{d:Object.assign({},d,{fn:String(d.fn||'').toUpperCase().replace(/D$/,'')+'D'})}});};
+     const val=[];
+     if(String(d.dep||'').trim()&&!ds)val.push({cls:'vmsg er',msg:'Departure station "'+d.dep+'" is not in the airport directory. Type an ICAO or IATA code.',fixes:[]});
+     if(String(d.arr||'').trim()&&!as)val.push({cls:'vmsg er',msg:'Arrival station "'+d.arr+'" is not in the airport directory. Type an ICAO or IATA code.',fixes:[]});
+     if(String(d.arr||'').trim()==='')val.push({cls:'vmsg wa',msg:'Arrival station is empty.',fixes:[{label:'Use TBD placeholder XXXX/XXX',on:()=>{this.setState({panel:{d:Object.assign({},d,{arr:'XXXX/XXX',type:'Ferry'})}});}}]});
+     analyze(T.legs,BLOCKS,T.permits).filter(function(i){return i.legId===nl.id;}).forEach((i)=>{
+      val.push({cls:'vmsg '+(i.id.indexOf('ug|')===0?'wa':'er'),msg:TYPE_LBL[i.type]+': '+i.msg,fixes:i.fixes.map((f)=>({label:f.label,on:()=>this.panelFix(f)}))});
+     });
+     V.vals=val;V.valOk=val.length===0;
+     const rows=T.permits[nl.id]||[];
+     V.prows=rows.map((r,i)=>{
+      const urg=r.status==='Pending'&&nl.t0>=NOW&&nl.t0<NOW+URG;
+      return {c:r.c,type:r.type,no:r.no||'Not yet issued',valid:r.from+' to '+r.to,status:r.status,
+       pcls:urg?'b b-ur':(r.status==='Obtained'?'b b-ok':(r.status==='Pending'?'b b-pe':'b b-cn')),ptxt:urg?'Urgent <48h':r.status,
+       onStatus:(e)=>{const pm2=Object.assign({},T.permits);pm2[nl.id]=rows.map(function(x,j){return j===i?Object.assign({},x,{status:e.target.value,no:e.target.value==='Obtained'&&!x.no?'DEMO-'+CC[x.c]+'-26-'+(3300+i):x.no}):x;});this.setState({permits:pm2});}};
+     });
+     V.noPerm=rows.length===0;
+     V.onSave=()=>this.savePanel();
+     V.canChk=!d.isNew;
+     V.addChk=()=>{this.setState({sel:S.sel.indexOf(nl.id)>=0?S.sel:S.sel.concat([nl.id]),panel:null,screen:'chk'});};
+    }
+    const cnt={all:issues.length};
+    Object.keys(TYPE_LBL).forEach(function(k){cnt[k]=issues.filter(function(i){return i.type===k;}).length;});
+    V.cfOpts=[['all','All']].concat(Object.keys(TYPE_LBL).map(function(k){return [k,TYPE_LBL[k]];})).map((o)=>({label:o[1]+' ('+cnt[o[0]]+')',cls:'btn sm'+(S.cf===o[0]?' pri':''),on:()=>this.setState({cf:o[0]})}));
+    const crow=issues.filter(function(i){return S.cf==='all'||i.type===S.cf;});
+    V.conf=crow.map((i)=>{
+     const urg=i.id.indexOf('ug|')===0;
+     return {sevCls:urg?'b b-ur':'b b-er',sev:urg?'Urgent':'Error',typeLbl:TYPE_LBL[i.type],reg:REG[i.ac],when:fmtDow(dayOf(i.t))+', '+hhmm(i.t)+'Z',msg:i.msg,
+      fixes:i.fixes.map((f)=>({label:f.label,hint:f.hint||'',on:()=>this.fix(f)})),go:()=>this.goLeg(i.legId)};
+    });
+    V.confNone=crow.length===0;
+    V.rules=[
+     {t:'Flight number conflict',ex:'PHC533 is used by 4L-PXA and 4L-PXB on the same day',fx:'Add D suffix',cls:'b b-er',l:'Error'},
+     {t:'Station continuity',ex:'4L-PXB lands at ATH but next departs from ALA',fx:'Insert ferry leg, or edit next departure',cls:'b b-er',l:'Error'},
+     {t:'Aircraft unavailable',ex:'Flight overlaps AOG, line maintenance or C-Check',fx:'Move rotation to the backup aircraft',cls:'b b-er',l:'Error'},
+     {t:'Permit risk',ex:'Permit not obtained and departure within 48 hours, or missing for a route country',fx:'Mark obtained, or add permit request',cls:'b b-ur',l:'Urgent'},
+     {t:'Overlapping legs',ex:'Two legs overlap in time on the same aircraft',fx:'Shift the later leg after the earlier one',cls:'b b-er',l:'Error'}
+    ];
+    const prAll=[];
+    S.legs.forEach((l)=>{
+     const rows=S.permits[l.id]||[];
+     const mk=(c,tp,no,st)=>{
+      const urg=st==='Pending'&&!l.cnl&&l.t0>=NOW&&l.t0<NOW+URG;
+      const k=urg?'Urgent':st;
+      const cls={Urgent:'b b-ur',Missing:'b b-er',Pending:'b b-pe',Obtained:'b b-ok',Cancelled:'b b-cn'}[k];
+      let actL='',act=null;
+      if(k==='Urgent'||k==='Pending'){actL='Mark obtained';act=()=>this.fix({k:'permobt',legId:l.id,label:'Mark obtained'});}
+      if(k==='Missing'){actL='Add request';act=()=>this.fix({k:'permadd',legId:l.id,label:'Add permit request'});}
+      prAll.push({k:k,c:c,type:tp,no:no||'Not yet issued',fn:l.fn,route:l.dep+' > '+l.arr,reg:REG[l.ac],t:l.t0,when:fmtDate(dayOf(l.t0))+' '+hhmm(l.t0)+'Z',cls:cls,txt:k==='Urgent'?'Urgent <48h':k,rowCls:k==='Cancelled'?'strike':'',hasAct:!!act,actL:actL,act:act,go:()=>this.goLeg(l.id)});
+     };
+     rows.forEach(function(r){mk(r.c,r.type,r.no,r.status);});
+     if(!l.cnl)need(l.dep,l.arr).filter(function(n){return !rows.some(function(r){return r.c===n[0]&&r.type===n[1];});}).forEach(function(n){mk(n[0],n[1],'','Missing');});
+    });
+    const pc={All:prAll.length};['Urgent','Missing','Pending','Obtained','Cancelled'].forEach(function(k){pc[k]=prAll.filter(function(r){return r.k===k;}).length;});
+    V.pfOpts=['All','Urgent','Missing','Pending','Obtained','Cancelled'].map((k)=>({label:(k==='Urgent'?'Urgent <48h':k)+' ('+pc[k]+')',cls:'btn sm'+(S.pf===k||(S.pf==='all'&&k==='All')?' pri':''),on:()=>this.setState({pf:k==='All'?'all':k})}));
+    V.pcn=S.pcn;V.onPcn=(e)=>this.setState({pcn:e.target.value});
+    const prF=prAll.filter(function(r){return (S.pf==='all'||r.k===S.pf)&&(S.pcn==='all'||r.c===S.pcn);}).sort(function(a,b){return a.t-b.t;});
+    V.pPin=prF.filter(function(r){return r.k==='Urgent';});
+    V.hasPin=V.pPin.length>0;
+    const grp={};prF.filter(function(r){return r.k!=='Urgent';}).forEach(function(r){(grp[r.c]=grp[r.c]||[]).push(r);});
+    V.pGroups=Object.keys(grp).sort().map(function(c){return {country:c,n:grp[c].length,rows:grp[c]};});
+    V.pNone=prF.length===0;
+    const selL=S.legs.filter(function(l){return S.sel.indexOf(l.id)>=0;}).sort(function(a,b){return a.t0-b.t0;});
+    V.chkHas=selL.length>0;V.chkEmpty=selL.length===0;V.chkN=selL.length;V.ck=S.ck;V.onCk=(e)=>this.setState({ck:e.target.value});
+    V.pick=S.legs.filter(function(l){const q=S.ck.trim().toUpperCase();return !q||l.fn.indexOf(q)>=0||l.dep.indexOf(q)>=0||l.arr.indexOf(q)>=0||REG[l.ac].indexOf(q)>=0;}).sort(function(a,b){return a.t0-b.t0;}).slice(0,60).map((l)=>({fn:l.fn,route:l.dep+' > '+l.arr,when:fmtDate(dayOf(l.t0))+' '+hhmm(l.t0)+'Z',reg:REG[l.ac].slice(3),on:S.sel.indexOf(l.id)>=0,toggle:()=>this.toggleSel(l.id),cnl:l.cnl}));
+    V.clearSelChk=()=>this.setState({sel:[]});
+    V.pickDemo=()=>{this.setState({sel:S.legs.filter(function(l){return l.thru==='T611';}).map(function(l){return l.id;})});};
+    V.co=S.company;
+    const ex=S.ex||null;V.exBusy=!!ex&&ex.pct<100;V.exPct=ex?ex.pct+'%':'0%';V.exFmt=ex?ex.fmt:'';
+    V.doExport=(fmt)=>()=>{
+     if(this.exT)clearInterval(this.exT);
+     this.setState({ex:{fmt:fmt,pct:0}});
+     const ext={PDF:'pdf',Excel:'xlsx',Word:'docx'}[fmt];
+     this.exT=setInterval(()=>{
+      const p=(this.state.ex?this.state.ex.pct:0)+25;
+      this.setState({ex:{fmt:fmt,pct:Math.min(100,p)}});
+      if(p>=100){clearInterval(this.exT);this.toast('Checklist exported as PHC-checklist-'+selL.length+'-legs.'+ext+' (demo file)','ok');}
+     },180);
+    };
+    V.exPdf=V.doExport('PDF');V.exXls=V.doExport('Excel');V.exDoc=V.doExport('Word');
+    if(selL.length){
+     const mkF=function(ac,role){const f=S.fleet.find(function(x){return x.ac===ac;})||{};const m=function(v){return v?v:'Missing';};return {role:role,reg:f.reg,type:f.type,ser:m(f.ser),mfg:m(f.mfg),mtow:m(f.mtow)+(f.mtow?' kg':''),pay:m(f.pay)+(f.pay?' kg':''),warn:!f.ser||!f.mfg||!f.mtow||!f.pay};};
+     const prim=[],bak=[];
+     selL.forEach(function(l){if(prim.indexOf(l.ac)<0)prim.push(l.ac);});
+     selL.forEach(function(l){if(prim.indexOf(l.bac)<0&&bak.indexOf(l.bac)<0)bak.push(l.bac);});
+     V.dAc=prim.map(function(a){return mkF(a,'Primary');}).concat(bak.map(function(a){return mkF(a,'Backup');}));
+     V.dLegs=selL.map(function(l){return {fn:l.fn,ac:REG[l.ac],route:pair(l.dep)+' > '+pair(l.arr),date:fmtDow(dayOf(l.t0)),etd:hhmm(l.t0)+'Z',eta:hhmm(l.t1)+'Z',plus:dayOf(l.t1)>dayOf(l.t0),blk:dur(l.t1-l.t0),type:l.type,cnl:l.cnl};});
+     const pr={};
+     selL.forEach(function(l){(S.permits[l.id]||[]).forEach(function(r){const k=r.c+'|'+r.type+'|'+l.fn;pr[k]={c:r.c,type:r.type,fn:l.fn,no:r.no||'Not yet issued',status:r.status,valid:r.from+' to '+r.to};});});
+     V.dPerm=Object.keys(pr).sort().map(function(k){return pr[k];});
+     const notes=selL.filter(function(l){return l.notes;}).map(function(l){return l.fn+': '+l.notes;});
+     V.dNotes=notes.length?notes:['No special notes.'];
+     const st=[];selL.forEach(function(l){[l.dep,l.arr].forEach(function(c){if(c!=='XXX'&&st.indexOf(c)<0)st.push(c);});});
+     const px=function(c){return (AP[c].lo+2)/124*100;},py=function(c){return (1-(AP[c].la-16)/(52-16))*100;};
+     V.mpts=st.map(function(c){return {l:c,x:px(c),y:py(c)};});
+     let dd='';
+     selL.forEach(function(l){if(l.dep==='XXX'||l.arr==='XXX')return;const x1=px(l.dep),y1=py(l.dep),x2=px(l.arr),y2=py(l.arr);dd+='M'+x1.toFixed(1)+' '+y1.toFixed(1)+' Q'+((x1+x2)/2).toFixed(1)+' '+(((y1+y2)/2)-14).toFixed(1)+' '+x2.toFixed(1)+' '+y2.toFixed(1)+' ';});
+     V.mpath=dd;
+     V.dSpan=fmtDate(dayOf(selL[0].t0))+(dayOf(selL[selL.length-1].t0)!==dayOf(selL[0].t0)?' to '+fmtDate(dayOf(selL[selL.length-1].t0)):'')+' 2026';
+    }
+    const FL=[['ser','serial number'],['mfg','year of manufacture'],['mtow','MTOW'],['pay','payload']];
+    V.fleet=S.fleet.map((f,i)=>{
+     const miss=FL.filter(function(x){return !f[x[0]];}).map(function(x){return x[1];});
+     return {reg:f.reg,type:f.type,ser:f.ser||'Missing',mfg:f.mfg||'Missing',mtow:f.mtow?f.mtow+' kg':'Missing',pay:f.pay?f.pay+' kg':'Missing',st:f.st,stCls:f.st==='Active'?'b b-ok':'b b-ur',warn:miss.length>0,warnTxt:'Missing: '+miss.join(', '),edit:()=>this.setState({fd:{i:i,d:Object.assign({},f)}})};
+    });
+    V.fdOpen=!!S.fd;V.closeFd=()=>this.setState({fd:null});
+    V.addAc=()=>this.setState({fd:{i:null,d:{reg:'4L-',ac:'PXE',type:'B737-800SF',ser:'',mfg:'',mtow:'79,015',pay:'23,000',st:'Active'}}});
+    if(S.fd){
+     V.fdTitle=S.fd.i===null?'Add aircraft':'Edit '+S.fd.d.reg;V.fdd=S.fd.d;V.fdh={};
+     ['reg','type','ser','mfg','mtow','pay','st'].forEach((k)=>{V.fdh[k]=(e)=>this.setState({fd:{i:S.fd.i,d:Object.assign({},S.fd.d,{[k]:e.target.value})}});});
+     V.saveFd=()=>{
+      const d=S.fd.d;if(!d.reg||d.reg==='4L-'){this.toast('Enter a registration','er');return;}
+      const fleet=S.fd.i===null?S.fleet.concat([d]):S.fleet.map(function(x,j){return j===S.fd.i?d:x;});
+      this.setState({fleet:fleet,fd:null});this.toast(d.reg+' saved. Schedule headers update from the registry.','ok');
+     };
+    }
+    V.apq=S.apq;V.onApq=(e)=>this.setState({apq:e.target.value});
+    const ap=Object.keys(AP).map(function(c){const a=AP[c];const tz=a.tz;return {iata:c==='XXX'?'XXX':c,icao:a.ic,name:a.n,country:a.c,off:c==='XXX'?'Not set':'UTC'+(tz>=0?'+':'-')+Math.floor(Math.abs(tz))+(tz%1?':30':''),prov:c==='XXX'};});
+    const aq=S.apq.trim().toUpperCase();
+    V.aps=ap.filter(function(a){return !aq||a.iata.indexOf(aq)>=0||a.icao.indexOf(aq)>=0||a.name.toUpperCase().indexOf(aq)>=0||a.country.toUpperCase().indexOf(aq)>=0;});
+    V.apNone=V.aps.length===0;V.apClear=()=>this.setState({apq:''});
+    V.onCoName=(e)=>this.setState({company:Object.assign({},S.company,{name:e.target.value})});
+    V.onCoHdr=(e)=>this.setState({company:Object.assign({},S.company,{hdr:e.target.value})});
+    V.saveCo=()=>this.toast('Company profile saved. Checklists use the new header text.','ok');
+    V.logoUp=()=>this.toast('Logo upload is a placeholder in this demo','in');
+    const IM=S.imp;
+    V.imIdle=IM.ph===0;V.imRun=IM.ph===1;V.imDone=IM.ph===2;
+    V.imPct=IM.pct+'%';V.imParsed=Math.round(IM.pct/100*517);
+    V.imStage=['Reading workbook and sheets','Detecting merged cells','Parsing flight text','Matching stations to the directory','Reading cell colours as permit status'][Math.min(4,Math.floor(IM.pct/20))];
+    const startImp=()=>{
+     if(this.imT)clearInterval(this.imT);
+     this.setState({imp:{ph:1,pct:0,fx:[]}});
+     this.imT=setInterval(()=>{
+      const p=Math.min(100,this.state.imp.pct+6+Math.floor(Math.random()*6));
+      if(p>=100){clearInterval(this.imT);this.setState({imp:{ph:2,pct:100,fx:[]}});}else this.setState({imp:{ph:1,pct:p,fx:[]}});
+     },150);
+    };
+    V.startImp=startImp;V.noop=(e)=>{e.preventDefault();};V.dropImp=(e)=>{e.preventDefault();startImp();};V.pickImp=()=>startImp();
+    V.resetImp=()=>{this.setState({imp:{ph:0,pct:0,fx:[]}});};
+    V.imRevN=14-IM.fx.length;V.imOkN=517-(14-IM.fx.length);V.imAllFixed=IM.fx.length>=5;
+    const RS=[
+     {id:'r1',parts:[['PHC572D UGTB/TBS ETD/03.30Z LYBE/BEG ETA/06.30Z +',0]],fn:'PHC572D',route:'UGTB/TBS > LYBE/BEG',times:'03:30Z > 06:30Z  block 03:00',perm:'Obtained',note:'D suffix kept. The "+" sign was read as permit obtained.'},
+     {id:'r2',parts:[['PHC501 UGTB/TBS ETD/22.45Z LGAV/ATH ETA/03.00Z',0]],fn:'PHC501',route:'UGTB/TBS > LGAV/ATH',times:'22:45Z > 03:00Z (+1)  block 04:15',perm:'Pending',note:'Arrival crosses midnight UTC, (+1) added.'},
+     {id:'r3',parts:[['PHC611 TBS-URC-XIY ETD/02.00Z',0]],fn:'PHC611 x2 legs',route:'TBS > URC > XIY',times:'02:00Z > 11:40Z',perm:'Obtained',note:'One number on consecutive stops, grouped as a through flight.'},
+     {id:'r4',parts:[['PHC533 ',0],['UAAA/ALA ETD/ 0715z ???',1]],fn:'PHC533',route:'UAAA/ALA > ?',times:'07:15Z > ?',perm:'Pending',note:'',problem:'Departure and arrival look swapped, time format unclear.',sug:'PHC533 UGTB/TBS 07:15Z > UAAA/ALA 10:50Z',fixed:{fn:'PHC533',route:'UGTB/TBS > UAAA/ALA',times:'07:15Z > 10:50Z  block 03:35',perm:'Pending'}},
+     {id:'r5',parts:[['PHC541 ETD/13.30Z ',0],['LYBE/BEG',1],[' ETA/17.05Z',0]],fn:'PHC541',route:'? > LYBE/BEG',times:'13:30Z > 17:05Z',perm:'Obtained',note:'',problem:'No departure station in the cell.',sug:'Use UGTB/TBS, the base and the previous arrival',fixed:{fn:'PHC541',route:'UGTB/TBS > LYBE/BEG',times:'13:30Z > 17:05Z  block 03:35',perm:'Obtained'}},
+     {id:'r6',parts:[['PHC555 UGTB/TBS ETD/06.00Z ZWWW/URC ETA/11.00Z ',0],['[red fill, no text]',1]],fn:'PHC555',route:'UGTB/TBS > ZWWW/URC',times:'06:00Z > 11:00Z  block 05:00',perm:'Pending',note:'',problem:'Cell colour is red. No legend in the sheet.',sug:'Read red as Urgent <48h',fixed:{fn:'PHC555',route:'UGTB/TBS > ZWWW/URC',times:'06:00Z > 11:00Z  block 05:00',perm:'Urgent <48h'}},
+     {id:'r7',parts:[['FERRY TBD ',0],['XX?',1]],fn:'FERRY',route:'UGTB/TBS > XXXX/XXX',times:'18:00Z > ?',perm:'Pending',note:'',problem:'Destination not decided.',sug:'Keep as provisional XXXX/XXX ferry leg',fixed:{fn:'FERRY1',route:'UGTB/TBS > XXXX/XXX',times:'18:00Z > 21:00Z',perm:'No permit needed'}},
+     {id:'r8',parts:[['C-CHECK 22-24 SEP (merged cells)',0]],fn:'4L-PXB',route:'Maintenance block',times:'22 Sep 00:00Z > 25 Sep 00:00Z',perm:'No permit needed',note:'Merged cells became one C-Check block of 3 days.'}
+    ];
+    V.imRows=RS.map((r)=>{
+     const rev=!!r.problem,fx=IM.fx.indexOf(r.id)>=0,open=rev&&!fx;
+     const o=fx?r.fixed:r;
+     return {parts:r.parts.map(function(p){return {t:p[0],cls:p[1]&&open?'bad':''};}),fn:o.fn,route:o.route,times:o.times,perm:o.perm,
+      permCls:o.perm==='Obtained'?'b b-ok':(o.perm==='Urgent <48h'?'b b-ur':(o.perm==='Pending'?'b b-pe':'b b-nt')),
+      open:open,done:rev&&fx,note:r.note,problem:r.problem||'',sug:r.sug||'',rowCls:open?'msy bad':'msy',
+      accept:()=>{this.setState({imp:Object.assign({},IM,{fx:IM.fx.concat([r.id])})});this.toast('Fix accepted for '+r.fn,'ok');}};
+    });
+    V.doImport=()=>{this.toast('Demo import done: '+(517-(14-IM.fx.length))+' legs added, '+(14-IM.fx.length)+' kept in the review queue','ok');this.go('sched');};
+    return V;
+  }
+}
+</script>
+</body>
+</html>

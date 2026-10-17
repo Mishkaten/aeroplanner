@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
+// Static export: client components only, no API routes, no secrets (PRD NF-R9).
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  output: "export",
+  trailingSlash: true,
+  images: { unoptimized: true },
   turbopack: {
     rules: {
       "*.css": {
