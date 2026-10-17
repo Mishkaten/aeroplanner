@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { PageStub } from '@/components/shell/PageStub';
+import { OverviewPage } from "@/components/overview/OverviewPage";
 
 export default function Page() {
-  return <PageStub title="Operations overview" text="Week of 14 Sep 2026. Demo clock: Sun 13 Sep, 14:00Z." />;
+  return <OverviewPage />;
 }
-

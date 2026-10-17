@@ -116,7 +116,7 @@ export function ConflictsPage() {
                         <SeverityBadge severity={i.severity} />
                       </td>
                       <td>{RULE_TYPE_LABEL[i.ruleId]}</td>
-                      <td className="mono">{i.aircraftId ?? "-"}</td>
+                      <td className="mono">{i.aircraftId ? d.aircraftById.get(i.aircraftId)?.registration ?? i.aircraftId : "-"}</td>
                       <td className="mono">{fmtDowTime(i.whenUtc)}</td>
                       <td style={{ maxWidth: 560 }}>
                         <div>{i.message}</div>

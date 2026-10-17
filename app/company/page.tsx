@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { PageStub } from '@/components/shell/PageStub';
+import { CompanyPage } from "@/components/company/CompanyPage";
 
 export default function Page() {
-  return <PageStub title="Company profile" text="Printed on every checklist." />;
+  return <CompanyPage />;
 }
-

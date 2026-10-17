@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { PageStub } from '@/components/shell/PageStub';
+import { PermitsPage } from "@/components/permits/PermitsPage";
 
 export default function Page() {
-  return <PageStub title="Permits board" text="Landing and overflight permits grouped by country." />;
+  return <PermitsPage />;
 }
-
