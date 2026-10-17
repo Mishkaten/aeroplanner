@@ -1,0 +1,171 @@
+// Domain model. Only these seven entities are stored (PRD section 4).
+// Block time, (+1), "DAY n LT", through-flight groups, required permits and
+// every ValidationIssue are derived on each change and never stored.
+
+export type IsoInstant = string; // UTC, e.g. "2026-09-16T03:30:00Z"
+export type IsoDate = string; // UTC calendar date, e.g. "2026-09-16"
+
+export type CountryCode =
+  | "GE"
+  | "CN"
+  | "KZ"
+  | "RS"
+  | "GR"
+  | "HU"
+  | "RO"
+  | "IT"
+  | "AE"
+  | "IN"
+  | "HK"
+  | "XX";
+
+export interface Company {
+  id: string;
+  legalName: string;
+  vatNumber: string;
+  icao: string;
+  iata: string;
+  aocNumber: string;
+  baseIcao: string;
+  address: string;
+  opsContact: string;
+  checklistHeaderText: string;
+  logoDataUrl: string | null;
+  minGroundMinutes: number;
+}
+
+export type AircraftType = "B737-800SF" | "B737-800BCF" | "B767-300ER";
+export type AircraftStatus = "active" | "aog" | "maintenance";
+
+export interface Aircraft {
+  id: string; // same as registration
+  registration: string;
+  type: AircraftType;
+  serialNo: string | null;
+  yearOfManufacture: number | null;
+  mtowKg: number | null;
+  cargoPayloadKg: number | null;
+  status: AircraftStatus;
+  defaultBackupId: string | null;
+}
+
+export interface Airport {
+  icao: string; // key, e.g. "UGTB"
+  iata: string; // "TBS"
+  name: string;
+  countryCode: CountryCode;
+  utcOffsetMinutes: number; // fixed, no daylight saving in the demo
+  lat: number | null; // null only for the placeholder XXXX/XXX
+  lon: number | null;
+  provisional: boolean;
+}
+
+export type LegType = "landing" | "overflight" | "technical_stop" | "ferry";
+
+export interface LegSource {
+  kind: "seed" | "import" | "manual";
+  sheetRef?: { sheet: string; cell: string; rawText: string };
+}
+
+export interface Leg {
+  id: string;
+  flightNumber: string; // prefix + number without suffix, e.g. "PHC507"
+  suffix: "" | "D";
+  aircraftId: string;
+  backupAircraftId: string | null;
+  legType: LegType;
+  depIcao: string;
+  arrIcao: string;
+  etdUtc: IsoInstant;
+  etaUtc: IsoInstant;
+  status: "planned" | "cancelled";
+  notes: string;
+  source: LegSource;
+}
+
+export type PermitType = "landing" | "overflight";
+export type PermitStatus = "obtained" | "pending" | "cancelled";
+
+export interface Permit {
+  id: string;
+  legId: string;
+  countryCode: CountryCode;
+  type: PermitType;
+  number: string | null;
+  status: PermitStatus;
+  validFromUtc: IsoInstant | null;
+  validToUtc: IsoInstant | null;
+}
+
+export type MaintenanceKind = "aog" | "maintenance" | "c_check";
+
+export interface MaintenanceBlock {
+  id: string;
+  aircraftId: string;
+  kind: MaintenanceKind;
+  startUtc: IsoInstant;
+  endUtc: IsoInstant | null; // null = open-ended
+  note: string;
+}
+
+export interface DomainState {
+  company: Company;
+  aircraft: Aircraft[];
+  airports: Airport[];
+  legs: Leg[];
+  permits: Permit[];
+  blocks: MaintenanceBlock[];
+}
+
+export type RuleId = "R1" | "R2" | "R3" | "R4a" | "R4b" | "R5" | "R6"; // R7 produces no issue
+
+export type Coll = "legs" | "permits" | "blocks" | "aircraft";
+
+export type PatchOp =
+  | { op: "set"; coll: Coll; id: string; value: Record<string, unknown> }
+  | { op: "insert"; coll: Coll; value: { id: string } & Record<string, unknown> }
+  | { op: "remove"; coll: Coll; id: string };
+
+/** A list of set / insert / remove operations, applied atomically and undoable. */
+export type StatePatch = PatchOp[];
+
+export interface Fix {
+  id: string;
+  label: string;
+  enabled: boolean;
+  disabledReason: string | null;
+  patch: StatePatch;
+  /** Secondary actions open the leg drawer pre-filled instead of applying a patch. */
+  draft?: Partial<Leg>;
+  secondary?: boolean;
+  /** Plain-language result for the live region, e.g. "PHC509 on 4L-PXB is now PHC509D". */
+  result: string;
+}
+
+export interface ValidationIssue {
+  id: string; // `${ruleId}:${sorted legIds}:${blockId ?? ""}`
+  ruleId: RuleId;
+  severity: "error" | "warning";
+  legIds: string[];
+  aircraftId: string | null;
+  blockId: string | null;
+  whenUtc: IsoInstant; // earliest ETD among legIds
+  message: string;
+  fixes: Fix[];
+}
+
+/** An R1 exemption hit, shown under "Deliberately not flagged". */
+export interface Exemption {
+  id: string;
+  kind: "through" | "parallel" | "chain";
+  flight: string;
+  dateUtc: IsoDate;
+  legIds: string[];
+  aircraftIds: string[];
+  text: string;
+}
+
+export interface ValidationResult {
+  issues: ValidationIssue[];
+  exemptions: Exemption[];
+}

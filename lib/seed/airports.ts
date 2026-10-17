@@ -1,0 +1,20 @@
+import type { Airport } from "../types";
+
+// Offsets are fixed and valid for the demo range (European summer time ends 25 Oct 2026).
+// Coordinates are approximate and used only for the schematic route map.
+export const SEED_AIRPORTS: Airport[] = [
+  { icao: "UGTB", iata: "TBS", name: "Tbilisi International", countryCode: "GE", utcOffsetMinutes: 240, lat: 41.669, lon: 44.955, provisional: false },
+  { icao: "ZWWW", iata: "URC", name: "Urumqi Diwopu", countryCode: "CN", utcOffsetMinutes: 480, lat: 43.907, lon: 87.474, provisional: false },
+  { icao: "ZLXY", iata: "XIY", name: "Xi'an Xianyang", countryCode: "CN", utcOffsetMinutes: 480, lat: 34.447, lon: 108.752, provisional: false },
+  { icao: "UAAA", iata: "ALA", name: "Almaty International", countryCode: "KZ", utcOffsetMinutes: 300, lat: 43.352, lon: 77.04, provisional: false },
+  { icao: "LYBE", iata: "BEG", name: "Belgrade Nikola Tesla", countryCode: "RS", utcOffsetMinutes: 120, lat: 44.818, lon: 20.309, provisional: false },
+  { icao: "LGAV", iata: "ATH", name: "Athens Eleftherios Venizelos", countryCode: "GR", utcOffsetMinutes: 180, lat: 37.936, lon: 23.944, provisional: false },
+  { icao: "LHBP", iata: "BUD", name: "Budapest Ferenc Liszt", countryCode: "HU", utcOffsetMinutes: 120, lat: 47.437, lon: 19.262, provisional: false },
+  { icao: "LROP", iata: "OTP", name: "Bucharest Henri Coanda", countryCode: "RO", utcOffsetMinutes: 180, lat: 44.572, lon: 26.102, provisional: false },
+  { icao: "LIMC", iata: "MXP", name: "Milan Malpensa", countryCode: "IT", utcOffsetMinutes: 120, lat: 45.63, lon: 8.723, provisional: false },
+  { icao: "VHHH", iata: "HKG", name: "Hong Kong International", countryCode: "HK", utcOffsetMinutes: 480, lat: 22.309, lon: 113.915, provisional: false },
+  { icao: "VECC", iata: "CCU", name: "Kolkata Netaji Subhas Chandra Bose", countryCode: "IN", utcOffsetMinutes: 330, lat: 22.654, lon: 88.447, provisional: false },
+  { icao: "LIPK", iata: "FRL", name: "Forli", countryCode: "IT", utcOffsetMinutes: 120, lat: 44.195, lon: 12.07, provisional: false },
+  { icao: "OMDW", iata: "DWC", name: "Dubai Al Maktoum International", countryCode: "AE", utcOffsetMinutes: 240, lat: 24.896, lon: 55.161, provisional: false },
+  { icao: "XXXX", iata: "XXX", name: "Placeholder (TBD)", countryCode: "XX", utcOffsetMinutes: 0, lat: null, lon: null, provisional: true },
+];

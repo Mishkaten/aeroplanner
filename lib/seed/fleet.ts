@@ -1,0 +1,64 @@
+import type { Aircraft, Company } from "../types";
+
+export const SEED_COMPANY: Company = {
+  id: "phc",
+  legalName: "Phasis Air Cargo",
+  vatNumber: "000000000 (demo)",
+  icao: "PHC",
+  iata: "P7",
+  aocNumber: "DEMO-0001",
+  baseIcao: "UGTB",
+  address: "Tbilisi, Georgia (fictional)",
+  opsContact: "ops@phasis-demo.example",
+  checklistHeaderText: "Flight packet for crew and handling agents",
+  logoDataUrl: null,
+  minGroundMinutes: 60,
+};
+
+export const SEED_FLEET: Aircraft[] = [
+  {
+    id: "4L-PXA",
+    registration: "4L-PXA",
+    type: "B737-800SF",
+    serialNo: "34001",
+    yearOfManufacture: 2006,
+    mtowKg: 79016,
+    cargoPayloadKg: 23000,
+    status: "active",
+    defaultBackupId: "4L-PXB",
+  },
+  {
+    id: "4L-PXB",
+    registration: "4L-PXB",
+    type: "B737-800BCF",
+    serialNo: "34002",
+    yearOfManufacture: 2004,
+    mtowKg: 79016,
+    cargoPayloadKg: 22000,
+    status: "active",
+    defaultBackupId: "4L-PXA",
+  },
+  {
+    id: "4L-PXC",
+    registration: "4L-PXC",
+    type: "B767-300ER",
+    serialNo: "29001",
+    yearOfManufacture: 1999,
+    mtowKg: 186880,
+    cargoPayloadKg: 50000,
+    status: "active",
+    defaultBackupId: "4L-PXD",
+  },
+  {
+    // Cargo payload is empty on purpose: shows "Incomplete" and "Missing".
+    id: "4L-PXD",
+    registration: "4L-PXD",
+    type: "B767-300ER",
+    serialNo: "29002",
+    yearOfManufacture: 2001,
+    mtowKg: 186880,
+    cargoPayloadKg: null,
+    status: "active",
+    defaultBackupId: "4L-PXC",
+  },
+];
