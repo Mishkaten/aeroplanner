@@ -7,6 +7,7 @@ import { useDemo } from "@/lib/store";
 import { blankWorkspaceState, fullDemoState } from "@/lib/seed";
 import { normalizeData, useWorkspace, type Snapshot } from "@/lib/workspace";
 import { FEEDBACK_EMAIL } from "@/lib/mode";
+import { realNow } from "@/lib/clock";
 
 type Confirm = { title: string; text: string; run: () => Promise<void> } | null;
 
@@ -41,7 +42,7 @@ export function WorkspacePage() {
     const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `aeroplanner-workspace-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `aeroplanner-workspace-${realNow().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   };

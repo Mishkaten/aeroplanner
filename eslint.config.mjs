@@ -23,7 +23,7 @@ const eslintConfig = defineConfig([
     files: ["lib/testing.ts", "**/*.test.ts", "tests/**", "scripts/**"],
     rules: { "no-restricted-properties": "off", "no-restricted-syntax": "off" },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "design/**", "components/ui/**", "public/**"]),
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "design/**", "components/ui/**", "public/**", "scripts/private/**"]),
 ]);
 
 export default eslintConfig;
