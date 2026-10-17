@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AeroPlanner, Phasis Air Cargo demo
 
-## Getting Started
+Frontend-only demo for a Georgian cargo airline pitch: a messy Excel schedule becomes a validated schedule,
+a cleared conflict list and a flight packet. Fictional operator (Phasis Air Cargo, ICAO PHC, base UGTB/TBS),
+fictional data, no backend, no auth. Spec: `docs/PRD.pdf`. Design board: `design/`.
 
-First, run the development server:
+Stack: Next.js (App Router, static export), TypeScript, Tailwind, shadcn/ui, Zustand, date-fns (all UTC),
+exceljs, docx, pdfmake. Heavy libraries load on first use.
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm test           # Vitest: rules T-R1..T-R7, parser P1..P12, seed totals, exports
+npm run typecheck && npm run lint
+npm run build      # static export to ./out
+npm run build:sample   # rebuilds public/Phasis_2026_Season.xlsx from the seed
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Demo clock and state
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- The demo clock is fixed at Sun 13 Sep 2026, 14:00Z. No real clock or randomness in application logic (lint rule).
+- State lives in `sessionStorage` (key `aeroplanner.demo.v1`): a reload keeps edits, a new tab starts from the full demo.
+- Entry points: `?reset=1` full demo, `?start=empty` empty schedule, `?presenter=1` list-state switcher,
+  `?legs=1000` stress mode for performance tests.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Storylines
 
-## Learn More
+- A: Reset to empty schedule, Import from Excel, use the sample, accept 9 fixes, fix 5 rows in the drawer, import 90 legs.
+- B: Reset to full demo, Conflicts: fix R1, R2 and the R3 AOG issue, 9 open issues become 6.
+- C: Checklist export: tick the PHC611 legs and PHC612 XIY to URC, Export PDF.
 
-To learn more about Next.js, take a look at the following resources:
+## Layout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `lib/` pure logic with tests: `validate.ts` (R1 to R6), `import/` (grammar and sheet reader), `checklist/` (layout model and exporters), `seed/`.
+- `components/` screens, `app/` routes (client components only).

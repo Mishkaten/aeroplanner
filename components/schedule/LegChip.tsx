@@ -58,7 +58,7 @@ export const LegChip = memo(function LegChip({ leg, d, selected, highlighted, th
 
   return (
     <div className={cls} id={`leg-${leg.id}`} data-leg-id={leg.id}>
-      <button className="legmain" onClick={() => onOpen(leg.id)} aria-label={`Open ${fullFlight(leg)} ${dep} to ${arr}`}>
+      <button className="legmain" onClick={() => onOpen(leg.id)}>
         <span className="r1">
           <span className="fn mono strike">{fullFlight(leg)}</span>
           {cancelled && <span className="b b-cn">CNL</span>}
@@ -92,7 +92,7 @@ export const LegChip = memo(function LegChip({ leg, d, selected, highlighted, th
         />
       </span>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button className="btn sm" style={{ height: 22, padding: "0 6px", fontSize: 12 }} onClick={() => onToggleCancel(leg.id, !cancelled)} aria-label={`${cancelled ? "Restore" : "Cancel"} ${fullFlight(leg)}`}>
+        <button className="btn sm" style={{ height: 22, padding: "0 6px", fontSize: 12 }} onClick={() => onToggleCancel(leg.id, !cancelled)} aria-label={`${cancelled ? "Restore" : "CNL"} ${fullFlight(leg)}`}>
           {cancelled ? "Restore" : "CNL"}
         </button>
       </div>

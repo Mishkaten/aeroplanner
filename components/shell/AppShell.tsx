@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Moon, Plane, RotateCcw, Search, Sun } from "lucide-react";
 import { Toaster } from "sonner";
 import { NAV } from "./nav";
@@ -50,9 +50,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isCurrent = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href.replace(/\/$/, "")));
 
+  const current = NAV.find((n) => isCurrent(n.href));
+  useEffect(() => {
+    document.title = `${current?.label ?? "AeroPlanner"} | AeroPlanner, Phasis Air Cargo demo`;
+  }, [current?.label]);
+
   return (
     <>
       <StoreBoot />
+      <a className="skip" href="#main">
+        Skip to main content
+      </a>
       <div className="app-shell flex min-h-screen">
         <nav className="side" aria-label="Main navigation">
           <div className="brand">
@@ -67,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             return (
               <Link key={id} href={href} className="navb" aria-current={isCurrent(href) ? "page" : undefined}>
                 <Icon size={16} aria-hidden="true" />
-                {label}
+                <span className="nl">{label}</span>
                 {n !== undefined && n > 0 && (
                   <span className="cnt" aria-label={`${n} ${id === "conflicts" ? "open issues" : "urgent permit rows"}`}>
                     {n}
@@ -129,7 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <button className="btn sm" onClick={() => useUi.getState().setResetOpen(true)}>
               <RotateCcw size={14} aria-hidden="true" /> Reset demo data
             </button>
-            <button className="btn sm" onClick={toggleTheme} aria-label="Toggle dark mode">
+            <button className="btn sm" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
               {theme === "dark" ? <Sun size={14} aria-hidden="true" /> : <Moon size={14} aria-hidden="true" />}
               {theme === "dark" ? "Light" : "Dark"}
             </button>
@@ -137,7 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ?
             </button>
             <div style={{ position: "relative" }}>
-              <button className="btn sm" aria-label="User menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+              <button className="btn sm" aria-label="OP Ops planner, user menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
                 <b>OP</b> Ops planner
               </button>
               {menu && (
@@ -183,7 +191,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           )}
-          <main className="content" id="main">
+          <main className="content" id="main" tabIndex={-1}>
             {hydrated ? children : <div className="skel" style={{ height: 24, width: 240 }} aria-busy="true" />}
           </main>
         </div>

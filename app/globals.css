@@ -104,7 +104,7 @@
   --wa: #f2c768;
   --er-bg: #4a1c1a;
   --er: #ff9d94;
-  --urg-bg: #e5483d;
+  --urg-bg: #d13b30;
   --urg: #ffffff;
   --gr-bg: #25354a;
   --gr: #b3c0d1;
@@ -933,8 +933,9 @@
     border-style: dashed;
     border-color: var(--mut);
   }
-  .gbar.iss {
-    background: #b3261e;
+  .gbar.iss,
+  :root[data-theme="dark"] .gbar.iss {
+    background: var(--urg-bg);
     color: #fff;
   }
   .gbar.drag {
@@ -1046,7 +1047,50 @@
   }
 }
 
-@media (max-width: 1023px) {
+/* Desktop first (PRD NF-B2). From 768 to 1023 px the navigation shrinks to icons so the layout holds at
+   200% zoom. Below 768 px the app asks for a larger screen. */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .side {
+    width: 68px;
+    padding: 12px 6px;
+  }
+  .side .brand div,
+  .side .sidefoot {
+    display: none;
+  }
+  .side .nl {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .side .brand {
+    justify-content: center;
+    padding: 6px 0 14px;
+  }
+  .navb {
+    justify-content: center;
+    position: relative;
+    padding: 9px 0;
+  }
+  .navb .cnt {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    margin: 0;
+    padding: 0 5px;
+    font-size: 10.5px;
+  }
+  .top {
+    padding: 10px 14px;
+  }
+  .content {
+    padding: 16px 14px 40px;
+  }
+}
+@media (max-width: 767px) {
   .app-shell {
     display: none !important;
   }
@@ -1056,6 +1100,25 @@
 }
 .too-small {
   display: none;
+}
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  z-index: 100;
+  background: var(--panel);
+  color: var(--ink);
+  border: 2px solid var(--acc);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 600;
+}
+.skip:focus {
+  left: 8px;
+}
+.legact input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
 }
 
 @media print {

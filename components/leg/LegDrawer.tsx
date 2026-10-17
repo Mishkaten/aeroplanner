@@ -134,7 +134,7 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
             <SheetTitle style={{ fontSize: 16, margin: 0 }}>{title}</SheetTitle>
             {cancelled && <span className="b b-cn">Cancelled</span>}
             <span className="grow" />
-            <button className="btn sm" onClick={requestClose} aria-label="Close panel">
+            <button className="btn sm" onClick={requestClose}>
               Close <span className="kbd">Esc</span>
             </button>
           </div>

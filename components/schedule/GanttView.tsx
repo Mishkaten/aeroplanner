@@ -232,9 +232,9 @@ export function GanttView({ state, d, days, legs, calendar, focusId, focusNonce,
                             if (suppressClick.current) return;
                             onOpen(leg.id);
                           }}
-                          aria-label={`${fullFlight(leg)} ${fmtHHMM(leg.etdUtc)} to ${fmtHHMM(leg.etaUtc)} on ${a.registration}${cancelled ? ", cancelled" : ""}${issue ? ", has an issue" : ""}. Press Enter to open.`}
+                          aria-label={`${fullFlight(leg)} ${d.idx.byIcao.get(leg.depIcao)?.iata}>${d.idx.byIcao.get(leg.arrIcao)?.iata}, ${fmtHHMM(leg.etdUtc)} to ${fmtHHMM(leg.etaUtc)} UTC on ${a.registration}${cancelled ? ", cancelled" : ""}${issue ? ", has an issue" : ""}. Press Enter to open.`}
                         >
-                          <b style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{fullFlight(leg)}</b>
+                          <b style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{fullFlight(leg)}</b>{" "}
                           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                             {d.idx.byIcao.get(leg.depIcao)?.iata}&gt;{d.idx.byIcao.get(leg.arrIcao)?.iata}
                           </span>

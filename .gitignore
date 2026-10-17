@@ -43,3 +43,6 @@ next-env.d.ts
 # static export
 /out/
 .vercel
+
+# local a11y tooling
+/public/axe.min.js
