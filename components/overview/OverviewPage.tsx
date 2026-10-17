@@ -50,7 +50,7 @@ export function OverviewPage() {
         <div className="kpi">
           <small>Flights in the next 7 days</small>
           <b className="mono">{c.next7Days}</b>
-          <small>from the demo clock</small>
+          <small>{isDemoClock(data) ? "from the demo clock" : "from now"}</small>
         </div>
         <div className={`kpi ${c.openIssues ? "bad" : ""}`}>
           <small>Open issues</small>

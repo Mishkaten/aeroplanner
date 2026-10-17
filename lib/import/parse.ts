@@ -342,8 +342,8 @@ export const countSkipped = (rows: ImportRow[]) => rows.filter((r) => r.status =
 export function permitStatusOf(row: ImportRow): PermitStatus | null {
   const f = row.fields;
   const st = row.ref.style;
-  // precedence: CNL, strikethrough or red fill (cancelled), then marker, then green or amber fill
-  if (f?.cnl || st.strike || st.fill === "red") return "cancelled";
+  // precedence: CNL or strikethrough (cancelled), then marker, then green or amber fill. A red fill is only a warning colour and does not cancel.
+  if (f?.cnl || st.strike) return "cancelled";
   if (f && f.markers.length === 1) return f.markers[0] === "+" ? "obtained" : "pending";
   if (st.fill === "green") return "obtained";
   if (st.fill === "amber") return "pending";
