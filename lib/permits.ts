@@ -1,6 +1,6 @@
 import { isPlaceholder, type AirportIndex, COUNTRY_NAMES } from "./airports";
 import { addDaysIso, iso, utcDate, dateMs, MIN, DAY } from "./time";
-import type { CountryCode, Leg, Permit, PermitStatus, PermitType, StatePatch } from "./types";
+import type { CountryCode, Leg, Permit, PermitRule, PermitStatus, PermitType, StatePatch } from "./types";
 
 export interface RequiredPermit {
   countryCode: CountryCode;
@@ -44,7 +44,7 @@ const TO_BASE: Record<string, RequiredPermit[]> = {
  * Required permits for a route. Leg endpoints are looked up through the
  * airport index. Any leg touching the placeholder XXXX/XXX needs none.
  */
-export function requiredPermits(depIcao: string, arrIcao: string, idx: AirportIndex, baseIcao = "UGTB"): RequiredPermit[] {
+export function legacyRequiredPermits(depIcao: string, arrIcao: string, idx: AirportIndex, baseIcao = "UGTB"): RequiredPermit[] {
   if (isPlaceholder(depIcao) || isPlaceholder(arrIcao)) return [];
   const dep = idx.byIcao.get(depIcao);
   const arr = idx.byIcao.get(arrIcao);
@@ -59,6 +59,36 @@ export function requiredPermits(depIcao: string, arrIcao: string, idx: AirportIn
 
 function foreignLanding(code: CountryCode): RequiredPermit[] {
   return code === "GE" || code === "XX" ? [] : [L(code)];
+}
+
+/**
+ * Required permits for a route, from the permit rules the planner entered. A rule matches the station pair,
+ * and when it is marked both ways, the reverse direction too. Legs touching the placeholder need none.
+ */
+export function requiredPermits(depIcao: string, arrIcao: string, rules: PermitRule[]): RequiredPermit[] {
+  if (isPlaceholder(depIcao) || isPlaceholder(arrIcao) || depIcao === arrIcao) return [];
+  const out: RequiredPermit[] = [];
+  const seen = new Set<string>();
+  for (const r of rules) {
+    const hit = (r.aIcao === depIcao && r.bIcao === arrIcao) || (r.both && r.aIcao === arrIcao && r.bIcao === depIcao);
+    if (!hit) continue;
+    const k = `${r.countryCode}:${r.type}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ countryCode: r.countryCode, type: r.type });
+  }
+  return out;
+}
+
+/** The demo route table of PRD 9.4 as explicit rules, one per direction of every route in the seed. */
+export function demoPermitRules(pairs: [string, string][], idx: AirportIndex): PermitRule[] {
+  const rules: PermitRule[] = [];
+  for (const [a, b] of pairs) {
+    legacyRequiredPermits(a, b, idx).forEach((r) =>
+      rules.push({ id: `R-${a}-${b}-${r.countryCode}-${r.type}`, aIcao: a, bIcao: b, both: false, countryCode: r.countryCode, type: r.type }),
+    );
+  }
+  return rules;
 }
 
 export const permitId = (legId: string, code: CountryCode, type: PermitType): string => `P-${legId}-${code}-${type}`;
@@ -112,24 +142,3 @@ export function draftPermitPatch(leg: Pick<Leg, "id" | "etdUtc">, existing: Perm
 }
 
 export const permitKey =(p: { countryCode: CountryCode; type: PermitType }): string => `${p.countryCode}:${p.type}`;
-
-/**
- * Rows for a leg after its route changed: rows still required are kept,
- * newly required ones are added as pending, rows no longer required are removed.
- */
-export function syncPermitPatch(
-  leg: Pick<Leg, "id" | "etdUtc" | "depIcao" | "arrIcao">,
-  existing: Permit[],
-  idx: AirportIndex,
-  baseIcao: string,
-): StatePatch {
-  const need = requiredPermits(leg.depIcao, leg.arrIcao, idx, baseIcao);
-  const needKeys = new Set(need.map(permitKey));
-  const have = existing.filter((p) => p.legId === leg.id);
-  const haveKeys = new Set(have.map(permitKey));
-  const patch: StatePatch = [];
-  for (const p of have) if (!needKeys.has(permitKey(p))) patch.push({ op: "remove", coll: "permits", id: p.id });
-  for (const r of need)
-    if (!haveKeys.has(permitKey(r))) patch.push({ op: "insert", coll: "permits", value: newPermit(leg, r, "pending") as never });
-  return patch;
-}

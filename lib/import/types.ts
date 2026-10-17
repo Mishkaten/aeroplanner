@@ -1,4 +1,4 @@
-import type { Aircraft, Airport, Company, Leg } from "../types";
+import type { Aircraft, Airport, Company, Leg, PermitRule } from "../types";
 import type { DraftPermit } from "../permits";
 
 export type FlagCode =
@@ -80,7 +80,7 @@ export interface RawLine {
   style: CellStyle;
 }
 
-export type RowStatus = "ok" | "flagged" | "fixed";
+export type RowStatus = "ok" | "flagged" | "fixed" | "skipped";
 
 export interface ImportRow {
   id: string;
@@ -108,14 +108,39 @@ export interface SheetStructure {
 export interface ParseCtx {
   companyIcao: string;
   baseIcao: string;
+  dayTagMode?: "arrival_local" | "departure_day" | "ignore";
   airports: Airport[];
+  permitRules: PermitRule[];
   aircraft: Pick<Aircraft, "id" | "registration" | "defaultBackupId">[];
+}
+
+/** A whole-day AOG, C-CHECK or MAINTENANCE entry in an aircraft column. */
+export interface MaintenanceDay {
+  aircraftReg: string;
+  date: string;
+  kind: "aog" | "c_check" | "maintenance";
+  cell: string;
+}
+
+/** The fleet table and company designators found at the top of the sheet. */
+export interface FleetFound {
+  company: { name: string; icao: string; iata: string };
+  aircraft: {
+    registration: string;
+    type: string;
+    serialNo: string | null;
+    yearOfManufacture: number | null;
+    mtowKg: number | null;
+    cargoPayloadKg: number | null;
+  }[];
 }
 
 export interface WorkbookResult {
   fileName: string;
   structure: SheetStructure;
   lines: RawLine[];
+  maintenance: MaintenanceDay[];
+  fleet: FleetFound | null;
   /** Registrations found in the header row that are not in the Fleet registry. */
   unknownAircraft: string[];
 }

@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 import { useDemo } from "@/lib/store";
+import { mondayOf } from "@/lib/schedule";
+import { addDaysIso } from "@/lib/time";
 import { useUi } from "@/lib/ui-store";
 import { SAMPLE_FILE } from "@/lib/import/sample";
 import { importCounts, importPayload, useImport } from "@/lib/import/store";
@@ -31,6 +33,9 @@ export function ImportPage() {
   const parsed = useImport((s) => s.parsed);
   const stage = useImport((s) => s.stage);
   const structure = useImport((s) => s.structure);
+  const fleet = useImport((s) => s.fleet);
+  const maintenance = useImport((s) => s.maintenance);
+  const registered = useDemo((s) => s.data.aircraft);
   const rows = useImport((s) => s.rows);
   const error = useImport((s) => s.error);
   const [over, setOver] = useState(false);
@@ -63,17 +68,21 @@ export function ImportPage() {
   };
 
   const doImport = () => {
-    const { legs, permits } = importPayload();
-    const skipped = counts.review;
-    const { inserted, updated } = useDemo.getState().importLegs(legs, permits);
+    const { legs, permits, blocks } = importPayload();
+    const skipped = counts.review + counts.skipped;
+    const { inserted, updated } = useDemo.getState().importLegs(legs, permits, blocks);
     const n = inserted + updated;
-    const msg = `${n} legs imported${skipped ? `. ${skipped} rows skipped` : ""}`;
+    const msg = `${n} legs imported${blocks.length ? `, ${blocks.length} unavailable periods` : ""}${skipped ? `. ${skipped} rows skipped` : ""}`;
     toast.success(msg);
     useUi.getState().say(msg);
     useUi.getState().clearFilters();
-    useDemo.getState().setRange(0);
+    if (legs.length) {
+      const first = legs.map((l) => l.etdUtc.slice(0, 10)).sort()[0];
+      const from = mondayOf(first);
+      useDemo.getState().setRange({ from, to: addDaysIso(from, 20) });
+    }
     useImport.getState().reset();
-    router.push("/schedule/");
+    router.push("/schedule");
   };
 
   return (
@@ -164,10 +173,47 @@ export function ImportPage() {
             </div>
           </section>
 
+          {(fleet || maintenance.length > 0) && (
+            <section className="card" aria-label="Also found in the sheet">
+              <div className="cardh">
+                <h3>Also found in the sheet</h3>
+              </div>
+              <div className="cardb" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {fleet && (
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                    <span>
+                      Fleet table: {fleet.aircraft.map((a) => `${a.registration} ${a.type}`).join(", ")}. Company designators{" "}
+                      <b className="mono">
+                        {fleet.company.icao || "?"} / {fleet.company.iata || "?"}
+                      </b>
+                      {fleet.company.name ? ` (${fleet.company.name})` : ""}.
+                    </span>
+                    <span className="grow" />
+                    <button
+                      className="btn pri sm"
+                      disabled={fleet.aircraft.every((a) => registered.some((r) => r.registration === a.registration)) && !fleet.company.icao}
+                      onClick={() => {
+                        const r = useImport.getState().addFleet();
+                        toast.success(`${r.aircraft} aircraft added${r.company ? ", company designators set" : ""}. Rows were read again.`);
+                      }}
+                    >
+                      Add this fleet and set the company
+                    </button>
+                  </div>
+                )}
+                {maintenance.length > 0 && (
+                  <div>
+                    {maintenance.length} whole-day AOG, C-Check or Maintenance entries become unavailable periods on import (consecutive days merge). You can edit them on the Fleet registry page.
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           <section className="card" aria-label="Parsed rows">
             <div className="cardh">
               <h3>
-                {counts.parsed} legs parsed, {counts.review} need review
+                {counts.parsed} legs parsed, {counts.review} need review{counts.skipped ? `, ${counts.skipped} skipped` : ""}
               </h3>
               <span className="grow" />
               <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -279,6 +325,17 @@ function RowView({ row }: { row: ImportRow }) {
                 Edit
               </button>
             )}
+            <button className="btn sm" onClick={() => useImport.getState().skip(row.id, true)} title="Leave this line out of the import">
+              Skip row
+            </button>
+          </div>
+        )}
+        {row.status === "skipped" && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span className="b b-nt">Skipped</span>
+            <button className="btn sm" onClick={() => useImport.getState().skip(row.id, false)}>
+              Undo skip
+            </button>
           </div>
         )}
         {row.status === "fixed" && (

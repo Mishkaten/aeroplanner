@@ -8,6 +8,7 @@ import { useUi } from "@/lib/ui-store";
 import { AIRCRAFT_TYPES, aircraftToForm, blankAircraftForm, missingFields, validateAircraft, type AircraftForm } from "@/lib/forms";
 import type { Aircraft, AircraftStatus } from "@/lib/types";
 import { ListGate } from "@/components/common/ListGate";
+import { BlocksSection } from "./BlocksSection";
 
 const ST: Record<AircraftStatus, { cls: string; txt: string }> = {
   active: { cls: "b b-ok", txt: "Active" },
@@ -89,6 +90,7 @@ export function FleetPage() {
           </table>
         </section>
       </ListGate>
+      <BlocksSection />
       {edit && <AircraftDrawer key={edit === "new" ? "new" : edit.id} aircraft={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
     </>
   );
@@ -162,11 +164,12 @@ function AircraftDrawer({ aircraft, onClose }: { aircraft: Aircraft | null; onCl
             {field("registration", "Tail number", { placeholder: "4L-PXE", onChange: (ev) => set({ registration: ev.target.value.toUpperCase() }) })}
             <div className="fld">
               <label htmlFor="a-type">Type</label>
-              <select id="a-type" className="sel" value={form.type} onChange={(ev) => set({ type: ev.target.value as AircraftForm["type"] })}>
-                {AIRCRAFT_TYPES.map((t) => (
-                  <option key={t}>{t}</option>
+              <input id="a-type" className="inp mono" list="a-types" value={form.type} onChange={(ev) => set({ type: ev.target.value })} placeholder="B737-800SF" />
+              <datalist id="a-types">
+                {[...new Set([...AIRCRAFT_TYPES, ...fleet.map((x) => x.type)])].map((t) => (
+                  <option key={t} value={t} />
                 ))}
-              </select>
+              </datalist>
             </div>
             {field("serialNo", "Serial number")}
             {field("year", "Year of manufacture", { inputMode: "numeric" })}

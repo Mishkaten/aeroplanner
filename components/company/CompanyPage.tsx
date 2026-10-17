@@ -91,6 +91,16 @@ export function CompanyPage() {
           {text("base", "Base", true, { placeholder: "UGTB/TBS" })}
           {text("address", "Address", false)}
           {text("opsContact", "Operations contact", false)}
+          {text("minGround", "Minimum ground time (minutes)", true, { inputMode: "numeric" })}
+        </div>
+        <div className="fld">
+          <label htmlFor="c-dt">What does &quot;DAY n LT&quot; mean in your Excel lines?</label>
+          <select id="c-dt" className="sel" value={form.dayTagMode} onChange={(e) => set({ dayTagMode: e.target.value as CompanyForm["dayTagMode"] })}>
+            <option value="ignore">Do not check it</option>
+            <option value="arrival_local">Weekday of the local arrival date (ISO, Monday is 1)</option>
+            <option value="departure_day">Weekday of the departure date (the row date)</option>
+          </select>
+          <span className="hint">Used by the Excel import to flag a DAY tag that does not match the dates.</span>
         </div>
         <div className="fld">
           <label htmlFor="c-h">Default checklist header text</label>

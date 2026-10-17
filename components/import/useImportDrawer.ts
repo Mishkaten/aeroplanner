@@ -5,7 +5,6 @@ import { useImport } from "@/lib/import/store";
 import { permitStatusOf, readTime } from "@/lib/import/parse";
 import type { Leg } from "@/lib/types";
 import { requiredPermits, type DraftPermit } from "@/lib/permits";
-import { indexAirports } from "@/lib/airports";
 import type { ImportCtx } from "@/components/leg/LegDrawer";
 
 const hhmm = (raw: string): string => {
@@ -17,15 +16,14 @@ const hhmm = (raw: string): string => {
 export function useImportDrawer(rowId: string | null): { leg: Leg | null; ctx: ImportCtx } | null {
   const row = useImport((s) => (rowId ? s.rows.find((r) => r.id === rowId) ?? null : null));
   const aircraft = useDemo((s) => s.data.aircraft);
-  const airports = useDemo((s) => s.data.airports);
-  const baseIcao = useDemo((s) => s.data.company.baseIcao);
+  const rules = useDemo((s) => s.data.permitRules);
   if (!row) return null;
   // Permit rows from the cell marker or colour are pre-filled, and can be edited in the drawer.
   const initialPermits = (): DraftPermit[] => {
     if (row.overridePermits) return row.overridePermits;
     const st = permitStatusOf(row);
     if (!st || !row.fields) return [];
-    return requiredPermits(row.fields.dep.icao, row.fields.arr.icao, indexAirports(airports), baseIcao).map((r) => ({ countryCode: r.countryCode, type: r.type, status: st, number: "" }));
+    return requiredPermits(row.fields.dep.icao, row.fields.arr.icao, rules).map((r) => ({ countryCode: r.countryCode, type: r.type, status: st, number: "" }));
   };
   const f = row.fields;
   const ac = aircraft.find((a) => a.registration === row.ref.aircraftReg);

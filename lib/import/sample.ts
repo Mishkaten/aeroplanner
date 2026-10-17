@@ -117,7 +117,7 @@ export function sampleSheetSpec(state: DomainState): SheetSpec {
   const canonical = (l: Leg): { text: string; status: "obtained" | "pending" | "cancelled" | null } => {
     const rows = permitsByLeg.get(l.id) ?? [];
     const status = l.status === "cancelled" ? "cancelled" : rows.length && rows.every((s) => s === "obtained") ? "obtained" : rows.length && rows.every((s) => s === "pending") ? "pending" : null;
-    const req = requiredPermits(l.depIcao, l.arrIcao, idx, state.company.baseIcao).length;
+    const req = requiredPermits(l.depIcao, l.arrIcao, state.permitRules).length;
     let t = `${fullFlight(l)} ${l.depIcao}/${iata(l.depIcao)} ETD/${hhmm(l.etdUtc)}Z ${l.arrIcao}/${iata(l.arrIcao)} ETA/${hhmm(l.etaUtc)}Z`;
     const v = variantOf.get(l.id);
     // A typed day tag is the ISO weekday of the local arrival date. Legs whose local date equals the UTC date

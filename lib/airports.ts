@@ -2,20 +2,24 @@ import type { Airport, CountryCode } from "./types";
 
 export const PLACEHOLDER_ICAO = "XXXX";
 
-export const COUNTRY_NAMES: Record<CountryCode, string> = {
-  GE: "Georgia",
-  CN: "China",
-  KZ: "Kazakhstan",
-  RS: "Serbia",
-  GR: "Greece",
-  HU: "Hungary",
-  RO: "Romania",
-  IT: "Italy",
-  AE: "UAE",
-  IN: "India",
-  HK: "Hong Kong",
-  XX: "Not set",
-};
+const OVERRIDES: Record<string, string> = { AE: "UAE", HK: "Hong Kong", XX: "Not set" };
+let regionNames: Intl.DisplayNames | null = null;
+
+/** Display name of an ISO 3166 alpha-2 code ("RS" gives "Serbia"). Unknown codes print as typed. */
+export function countryName(code: CountryCode): string {
+  if (OVERRIDES[code]) return OVERRIDES[code];
+  try {
+    regionNames ??= new Intl.DisplayNames(["en"], { type: "region" });
+    return regionNames.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/** Lookup by code, for example COUNTRY_NAMES["RS"]. */
+export const COUNTRY_NAMES: Record<CountryCode, string> = new Proxy({} as Record<string, string>, {
+  get: (_t, key) => countryName(String(key)),
+});
 
 export type AirportIndex = {
   byIcao: Map<string, Airport>;

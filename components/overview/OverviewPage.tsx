@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { derive } from "@/lib/derived";
+import { isDemoClock } from "@/lib/clock";
 import { useDemo } from "@/lib/store";
 import { fleetAvailability } from "@/lib/selectors";
 import { RULE_TYPE_LABEL } from "@/lib/rules";
@@ -32,7 +33,11 @@ export function OverviewPage() {
       <div className="head">
         <div>
           <h1>Operations overview</h1>
-          <p>Week of 14 Sep 2026. Demo clock: Sun 13 Sep, 14:00Z.</p>
+          <p>
+            {isDemoClock(data)
+              ? "Week of 14 Sep 2026. Demo clock: Sun 13 Sep, 14:00Z."
+              : `Now: ${fmtDowTime(d.clock)} (real clock, all times UTC).`}
+          </p>
         </div>
       </div>
 

@@ -5,19 +5,8 @@
 export type IsoInstant = string; // UTC, e.g. "2026-09-16T03:30:00Z"
 export type IsoDate = string; // UTC calendar date, e.g. "2026-09-16"
 
-export type CountryCode =
-  | "GE"
-  | "CN"
-  | "KZ"
-  | "RS"
-  | "GR"
-  | "HU"
-  | "RO"
-  | "IT"
-  | "AE"
-  | "IN"
-  | "HK"
-  | "XX";
+/** ISO 3166 alpha-2 code, or "XX" for the placeholder airport. */
+export type CountryCode = string;
 
 export interface Company {
   id: string;
@@ -32,9 +21,12 @@ export interface Company {
   checklistHeaderText: string;
   logoDataUrl: string | null;
   minGroundMinutes: number;
+  /** What "DAY n LT" in an Excel line means: the weekday of the local arrival date, of the departure date, or nothing (not checked). */
+  dayTagMode: "arrival_local" | "departure_day" | "ignore";
 }
 
-export type AircraftType = "B737-800SF" | "B737-800BCF" | "B767-300ER";
+/** Free text, for example "B737-800SF". */
+export type AircraftType = string;
 export type AircraftStatus = "active" | "aog" | "maintenance";
 
 export interface Aircraft {
@@ -50,6 +42,8 @@ export interface Aircraft {
 }
 
 export interface Airport {
+  /** Same as icao. Patches address rows by id. */
+  id: string;
   icao: string; // key, e.g. "UGTB"
   iata: string; // "TBS"
   name: string;
@@ -108,7 +102,21 @@ export interface MaintenanceBlock {
   note: string;
 }
 
+/** Which permits a route needs. Entered by the planner, the route is matched by station pair. */
+export interface PermitRule {
+  id: string;
+  aIcao: string;
+  bIcao: string;
+  /** true: applies in both directions, false: only A to B */
+  both: boolean;
+  countryCode: CountryCode;
+  type: PermitType;
+}
+
 export interface DomainState {
+  /** The "now" used for the 48 h permit rule. null means the real clock. The demo seed pins it. */
+  clock: IsoInstant | null;
+  permitRules: PermitRule[];
   company: Company;
   aircraft: Aircraft[];
   airports: Airport[];
@@ -119,7 +127,7 @@ export interface DomainState {
 
 export type RuleId = "R1" | "R2" | "R3" | "R4a" | "R4b" | "R5" | "R6"; // R7 produces no issue
 
-export type Coll = "legs" | "permits" | "blocks" | "aircraft";
+export type Coll = "legs" | "permits" | "blocks" | "aircraft" | "airports" | "permitRules";
 
 export type PatchOp =
   | { op: "set"; coll: Coll; id: string; value: Record<string, unknown> }

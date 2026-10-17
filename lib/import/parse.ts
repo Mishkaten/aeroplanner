@@ -3,7 +3,7 @@ import { indexAirports, isPlaceholder, PLACEHOLDER_ICAO, type AirportIndex } fro
 import { makeLegId } from "../legs";
 import { newPermit, requiredPermits, type DraftPermit } from "../permits";
 import { buildTimes, isoWeekday, ms, MIN, utcDate } from "../time";
-import type { Leg, LegType, Permit, PermitStatus } from "../types";
+import type { Leg, LegType, Permit, PermitRule, PermitStatus } from "../types";
 import { cleanWhitespace } from "./normalise";
 import type {
   Fields,
@@ -25,6 +25,8 @@ export interface ParseIndex {
   idx: AirportIndex;
   companyIcao: string;
   baseIcao: string;
+  dayTagMode: "arrival_local" | "departure_day" | "ignore";
+  rules: PermitRule[];
   byReg: Map<string, { id: string; registration: string; defaultBackupId: string | null }>;
 }
 
@@ -36,6 +38,8 @@ export function indexCtx(ctx: ParseCtx): ParseIndex {
     idx: indexAirports(ctx.airports),
     companyIcao: ctx.companyIcao,
     baseIcao: ctx.baseIcao,
+    dayTagMode: ctx.dayTagMode ?? "arrival_local",
+    rules: ctx.permitRules,
     byReg: new Map(ctx.aircraft.map((a) => [a.registration, a])),
   };
   cache.set(ctx, out);
@@ -48,7 +52,8 @@ export function indexCtx(ctx: ParseCtx): ParseIndex {
 const FLIGHT = /^([A-Za-z]{3})\s?(\d{1,4})(?:\s?([Dd]))?(?=\s|$)/;
 const STATION = /^\s*([A-Za-z]{4})\s*\/\s*([A-Za-z]{3})(?![A-Za-z])/;
 const TIME = /^\s*(ETD|ETA|STD)\s*[/: ]?\s*(\d[\d.:]*)\s*[Zz]?/i;
-const DAYTAG = /^\s*\(?\s*DAY\s*([1-7])\s*LT\s*\)?(?=\s|$|[+-])/i;
+const DAYTAG = /^\s*\(?\s*DAY\s*([1-7])\s*(?:LT)?\s*\)?(?=\s|$|[+-])/i;
+const NEXTDAY = /^\s*\(\s*\+\s*1\s*\)/;
 const MARKER = /^\s*([+-])(?=\s|$|[+-])/;
 const CNL = /^\s*CNL(?=\s|$)/i;
 const TYPEWORD = /^\s*(FERRY|OVERFLIGHT|TECHSTOP)(?=\s|$)/i;
@@ -84,7 +89,9 @@ export function scanLine(raw: string): Fields | null {
   let last: "time" | "daytag" | "marker" | "other" = "time";
   for (;;) {
     let m: RegExpExecArray | null;
-    if ((m = DAYTAG.exec(rest))) {
+    if ((m = NEXTDAY.exec(rest))) {
+      // "(+1)" next-day annotation: derived from the times, ignored
+    } else if ((m = DAYTAG.exec(rest))) {
       dayTag = Number(m[1]);
       last = "daytag";
     } else if (last !== "other" && (m = MARKER.exec(rest))) {
@@ -214,10 +221,10 @@ export function checkFields(f: Fields, ref: RawLine, pi: ParseIndex): ReviewFlag
     return flag("MARKER_CONFLICT", `${f.markers.join(" ")} follow the arrival time. Both permit markers cannot apply.`);
 
   // day tag: n must equal the ISO weekday of the local arrival date
-  if (f.dayTag !== null && !isPlaceholder(f.arr.icao)) {
+  if (f.dayTag !== null && pi.dayTagMode !== "ignore" && !isPlaceholder(f.arr.icao)) {
     const built = buildTimes(ref.dateIso, depMin, arrMin);
     const airport = pi.idx.byIcao.get(f.arr.icao)!;
-    const derived = isoWeekday(utcDate(ms(built.etaUtc) + airport.utcOffsetMinutes * MIN));
+    const derived = pi.dayTagMode === "departure_day" ? isoWeekday(ref.dateIso) : isoWeekday(utcDate(ms(built.etaUtc) + airport.utcOffsetMinutes * MIN));
     if (derived !== f.dayTag)
       return flag("DAYTAG_MISMATCH", `DAY ${f.dayTag} LT does not match the local arrival date, which is DAY ${derived} LT.`, {
         label: `DAY ${derived} LT`,
@@ -326,7 +333,8 @@ export function saveFromDrawer(row: ImportRow, leg: Leg, permits: DraftPermit[])
 }
 
 export const countReview = (rows: ImportRow[]) => rows.filter((r) => r.status === "flagged").length;
-export const countReady = (rows: ImportRow[]) => rows.filter((r) => r.status !== "flagged").length;
+export const countReady = (rows: ImportRow[]) => rows.filter((r) => r.status === "ok" || r.status === "fixed").length;
+export const countSkipped = (rows: ImportRow[]) => rows.filter((r) => r.status === "skipped").length;
 
 // ---------------------------------------------------------------------------
 // Rows to legs and permits
@@ -386,7 +394,7 @@ export function rowsToPayload(rows: ImportRow[], ctx: ParseCtx): ImportPayload {
   const legs: Leg[] = [];
   const permits: Permit[] = [];
   for (const row of rows) {
-    if (row.status === "flagged") continue;
+    if (row.status === "flagged" || row.status === "skipped") continue;
     const leg = row.override ? { ...row.override, source: { kind: "import" as const, sheetRef: { sheet: row.ref.sheet, cell: row.ref.cell, rawText: row.ref.text } } } : fieldsToLeg(row, ctx);
     if (!leg) continue;
     legs.push(leg);
@@ -395,7 +403,7 @@ export function rowsToPayload(rows: ImportRow[], ctx: ParseCtx): ImportPayload {
       for (const d of row.overridePermits) permits.push(newPermit(leg, d, d.status, d.status === "obtained" && d.number.trim() ? d.number.trim() : null));
       continue;
     }
-    const required = requiredPermits(leg.depIcao, leg.arrIcao, pi.idx, pi.baseIcao);
+    const required = requiredPermits(leg.depIcao, leg.arrIcao, pi.rules);
     const status = permitStatusOf(row);
     for (const r of required) {
       const chosen = leg.status === "cancelled" ? "cancelled" : status;

@@ -1,35 +1,56 @@
 import type { Derived } from "./derived";
 import { fullFlight, isActive } from "./legs";
-import { SEASON_START } from "./seed/legs";
 import { addDaysIso, dateMs, DAY, ms, utcDate, isoWeekday } from "./time";
 import type { Leg, MaintenanceBlock } from "./types";
 import type { ScheduleFilters } from "./ui-store";
-import type { RangeSel } from "./store";
 import { blockKindLabel, blockUntilText, effectiveBlocks, legHitsBlock } from "./validate";
 import type { DomainState } from "./types";
 
-/** UTC dates shown for a range selection. "all" covers the 3 season weeks, widened when legs lie outside them. */
-export function daysForRange(range: RangeSel, legs: Leg[]): string[] {
-  if (range !== "all") {
-    const start = addDaysIso(SEASON_START, range * 7);
-    return Array.from({ length: 7 }, (_, i) => addDaysIso(start, i));
-  }
-  let first = SEASON_START;
-  let last = addDaysIso(SEASON_START, 20);
-  for (const l of legs) {
-    const d = utcDate(l.etdUtc);
-    if (d < first) first = d;
-    if (d > last) last = d;
-  }
-  const n = Math.round((dateMs(last) - dateMs(first)) / DAY) + 1;
-  return Array.from({ length: n }, (_, i) => addDaysIso(first, i));
+export interface DateRange {
+  from: string; // UTC date, inclusive
+  to: string; // UTC date, inclusive
 }
 
-export function rangeLabel(range: RangeSel): string {
-  return range === "all"
-    ? "14 Sep to 4 Oct 2026"
-    : ["Week 1, 14 to 20 Sep", "Week 2, 21 to 27 Sep", "Week 3, 28 Sep to 4 Oct"][range];
+const MAX_DAYS = 120;
+
+/** Monday (UTC) of the week holding a date. */
+export function mondayOf(date: string): string {
+  return addDaysIso(date, -(isoWeekday(date) - 1));
 }
+
+/**
+ * The range shown when the user has not chosen one: three weeks starting at the Monday of today, or, when
+ * the schedule has no legs near today, three weeks starting at the first leg.
+ */
+export function autoRange(legs: Leg[], today: string): DateRange {
+  const near = legs.some((l) => {
+    const d = utcDate(l.etdUtc);
+    return d >= addDaysIso(today, -30) && d <= addDaysIso(today, 90);
+  });
+  let start = mondayOf(today);
+  if (!near && legs.length) {
+    let first = utcDate(legs[0].etdUtc);
+    for (const l of legs) if (utcDate(l.etdUtc) < first) first = utcDate(l.etdUtc);
+    start = mondayOf(first);
+  }
+  return { from: start, to: addDaysIso(start, 20) };
+}
+
+export function resolveRange(range: DateRange | null, legs: Leg[], today: string): DateRange {
+  return range ?? autoRange(legs, today);
+}
+
+/** Every UTC date in a range, capped so a mistyped year cannot freeze the page. */
+export function daysBetween(r: DateRange): string[] {
+  const n = Math.min(MAX_DAYS, Math.max(1, Math.round((dateMs(r.to) - dateMs(r.from)) / DAY) + 1));
+  return Array.from({ length: n }, (_, i) => addDaysIso(r.from, i));
+}
+
+export function rangeLabel(r: DateRange): string {
+  return `${fmtDateLong(r.from)} to ${fmtDateLong(r.to)}`;
+}
+
+const fmtDateLong = (d: string) => new Date(dateMs(d)).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 export function legMatches(leg: Leg, f: ScheduleFilters, d: Derived, typeOf: (aircraftId: string) => string | undefined): boolean {
   if (f.tab !== "all" && leg.aircraftId !== f.tab) return false;

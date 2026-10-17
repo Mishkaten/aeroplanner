@@ -1,8 +1,8 @@
 import { indexAirports } from "../airports";
 import { makeLegId } from "../legs";
-import { newPermit, requiredPermits } from "../permits";
+import { demoPermitRules, newPermit, requiredPermits } from "../permits";
 import { addDaysIso, buildTimes, parseHHMM, ms } from "../time";
-import type { Aircraft, Leg, LegType, MaintenanceBlock, Permit } from "../types";
+import type { Aircraft, Leg, LegType, MaintenanceBlock, Permit, PermitRule } from "../types";
 import { SEED_AIRPORTS } from "./airports";
 
 export const SEASON_START = "2026-09-14"; // Mon, day 1 of week 1
@@ -162,7 +162,7 @@ export function seedLegs(aircraft: Aircraft[], opts: SeedOptions = {}): Leg[] {
  * no rows at all (R4b). Obtained rows get DEMO-<country>-<10000 + n>, n counting
  * obtained rows in ETD order. The cancelled PHC517 on Sun 27 Sep keeps its row, cancelled.
  */
-export function seedPermits(legs: Leg[]): Permit[] {
+export function seedPermits(legs: Leg[], rules: PermitRule[]): Permit[] {
   const week3Start = ms(`${addDaysIso(SEASON_START, 14)}T00:00:00Z`);
   const noRows = new Set(["L-20260918-PHC613-TBS-D", "L-20260920-PHC517-TBS-B"]);
   const allPending = new Set(["L-20260914-PHC501-TBS-A", "L-20260914-PHC601-TBS-C"]);
@@ -171,7 +171,7 @@ export function seedPermits(legs: Leg[]): Permit[] {
   const ordered = [...legs].sort((a, b) => ms(a.etdUtc) - ms(b.etdUtc) || (a.id < b.id ? -1 : 1));
   for (const leg of ordered) {
     if (noRows.has(leg.id)) continue;
-    for (const req of requiredPermits(leg.depIcao, leg.arrIcao, idx)) {
+    for (const req of requiredPermits(leg.depIcao, leg.arrIcao, rules)) {
       let status: Permit["status"] = "obtained";
       if (leg.status === "cancelled") status = "cancelled";
       else if (allPending.has(leg.id) || ms(leg.etdUtc) >= week3Start) status = "pending";
@@ -204,3 +204,10 @@ export const SEED_BLOCKS: MaintenanceBlock[] = [
     note: "Scheduled C-Check (fictional)",
   },
 ];
+
+/** The demo permit rules: the route table of PRD 9.4 for every route that flies in the seed. */
+export function seedPermitRules(legs: Leg[]): PermitRule[] {
+  const pairs = new Map<string, [string, string]>();
+  for (const l of legs) pairs.set(`${l.depIcao}>${l.arrIcao}`, [l.depIcao, l.arrIcao]);
+  return demoPermitRules([...pairs.values()].sort(), idx);
+}

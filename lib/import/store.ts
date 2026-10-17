@@ -2,9 +2,10 @@
 
 import { create } from "zustand";
 import { useDemo } from "../store";
-import { acceptFix, buildRow, countReady, countReview, permitStatusOf, rowsToPayload, saveFromDrawer } from "./parse";
+import { acceptFix, buildRow, countReady, countReview, countSkipped, permitStatusOf, rowsToPayload, saveFromDrawer } from "./parse";
 import { runImport } from "./run";
-import type { ImportRow, ParseCtx, SheetStructure } from "./types";
+import type { FleetFound, ImportRow, MaintenanceDay, ParseCtx, SheetStructure } from "./types";
+import { mergeMaintenance } from "./blocks";
 import type { Leg } from "../types";
 import type { DraftPermit } from "../permits";
 
@@ -18,10 +19,14 @@ interface ImportStore {
   stage: string;
   structure: SheetStructure | null;
   rows: ImportRow[];
+  maintenance: MaintenanceDay[];
+  fleet: FleetFound | null;
   error: string | null;
 
   start: (buffer: ArrayBuffer, fileName: string) => Promise<void>;
   accept: (rowId: string) => void;
+  skip: (rowId: string, skipped: boolean) => void;
+  addFleet: () => { aircraft: number; company: boolean };
   saveDrawer: (rowId: string, leg: Leg, permits: DraftPermit[]) => void;
   reset: () => void;
   error_: (m: string | null) => void;
@@ -29,7 +34,7 @@ interface ImportStore {
 
 export function parseCtx(): ParseCtx {
   const { data } = useDemo.getState();
-  return { companyIcao: data.company.icao, baseIcao: data.company.baseIcao, airports: data.airports, aircraft: data.aircraft };
+  return { companyIcao: data.company.icao, baseIcao: data.company.baseIcao, dayTagMode: data.company.dayTagMode, airports: data.airports, permitRules: data.permitRules, aircraft: data.aircraft };
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -46,11 +51,13 @@ export const useImport = create<ImportStore>()((set, get) => ({
   stage: "",
   structure: null,
   rows: [],
+  maintenance: [],
+  fleet: null,
   error: null,
 
   start: async (buffer, fileName) => {
     stopTimer();
-    set({ phase: "running", fileName, pct: 0, parsed: 0, stage: "Opening the workbook", rows: [], structure: null, error: null });
+    set({ phase: "running", fileName, pct: 0, parsed: 0, stage: "Opening the workbook", rows: [], structure: null, maintenance: [], fleet: null, error: null });
     // The bar eases towards the real progress so a fast parse is still visible.
     let actual = 0;
     let shown = 0;
@@ -67,7 +74,7 @@ export const useImport = create<ImportStore>()((set, get) => ({
       actual = 100;
       while (shown < 100 && performance.now() - t0 < 2500) await new Promise((r) => setTimeout(r, 30));
       stopTimer();
-      set({ phase: "review", pct: 100, rows: result.rows, structure: result.structure, parsed: result.rows.length, stage: "Done" });
+      set({ phase: "review", pct: 100, rows: result.rows, maintenance: result.maintenance, fleet: result.fleet, structure: result.structure, parsed: result.rows.length, stage: "Done" });
     } catch (e) {
       stopTimer();
       set({ phase: "idle", error: e instanceof Error ? e.message : "The workbook could not be read." });
@@ -102,6 +109,45 @@ export const useImport = create<ImportStore>()((set, get) => ({
     set({ rows: get().rows.map((r) => (r.id === rowId ? acceptFix(r, ctx) : r)) });
   },
 
+  skip: (rowId, skipped) => {
+    set({ rows: get().rows.map((r) => (r.id === rowId ? { ...r, status: skipped ? "skipped" : r.override ? "fixed" : r.flag ? "flagged" : "ok" } : r)) });
+  },
+
+  addFleet: () => {
+    const { fleet, rows } = get();
+    const demo = useDemo.getState();
+    let added = 0;
+    for (const a of fleet?.aircraft ?? []) {
+      if (demo.data.aircraft.some((x) => x.registration === a.registration)) continue;
+      demo.addAircraftToStore({
+        id: a.registration,
+        registration: a.registration,
+        type: a.type || "Unknown type",
+        serialNo: a.serialNo,
+        yearOfManufacture: a.yearOfManufacture,
+        mtowKg: a.mtowKg,
+        cargoPayloadKg: a.cargoPayloadKg,
+        status: "active",
+        defaultBackupId: null,
+      });
+      added++;
+    }
+    let company = false;
+    const c = fleet?.company;
+    if (c && (c.icao || c.iata || c.name)) {
+      demo.patchCompany({
+        ...(c.name && !demo.data.company.legalName ? { legalName: c.name } : {}),
+        ...(c.icao ? { icao: c.icao } : {}),
+        ...(c.iata ? { iata: c.iata } : {}),
+      });
+      company = true;
+    }
+    // Rows the user has not touched are read again with the new fleet and company designators.
+    const ctx = parseCtx();
+    set({ rows: rows.map((r) => (r.touched || r.override || r.status === "skipped" ? r : buildRow(r.ref, ctx))) });
+    return { aircraft: added, company };
+  },
+
   saveDrawer: (rowId, leg, permits) => {
     set({
       rows: get().rows.map((r) => {
@@ -114,16 +160,18 @@ export const useImport = create<ImportStore>()((set, get) => ({
 
   reset: () => {
     stopTimer();
-    set({ phase: "idle", fileName: "", pct: 0, parsed: 0, stage: "", structure: null, rows: [], error: null });
+    set({ phase: "idle", fileName: "", pct: 0, parsed: 0, stage: "", structure: null, rows: [], maintenance: [], fleet: null, error: null });
   },
   error_: (error) => set({ error }),
 }));
 
-export const importCounts = (rows: ImportRow[]) => ({ parsed: rows.length, review: countReview(rows), ready: countReady(rows) });
+export const importCounts = (rows: ImportRow[]) => ({ parsed: rows.length, review: countReview(rows), ready: countReady(rows), skipped: countSkipped(rows) });
 
 export function importPayload() {
-  const { rows } = useImport.getState();
-  return rowsToPayload(rows, parseCtx());
+  const { rows, maintenance } = useImport.getState();
+  const ctx = parseCtx();
+  const ids = new Map(ctx.aircraft.map((a) => [a.registration, a.id]));
+  return { ...rowsToPayload(rows, ctx), blocks: mergeMaintenance(maintenance, (reg) => ids.get(reg) ?? null) };
 }
 
 export { buildRow };

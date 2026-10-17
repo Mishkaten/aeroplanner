@@ -5,7 +5,7 @@ import { SAMPLE_FLAGGED } from "./sample";
 import { fullDemoState } from "../seed";
 
 const seed = fullDemoState();
-const ctx = { companyIcao: "PHC", baseIcao: "UGTB", airports: seed.airports, aircraft: seed.aircraft };
+const ctx = { companyIcao: "PHC", baseIcao: "UGTB", airports: seed.airports, permitRules: seed.permitRules, aircraft: seed.aircraft };
 
 describe("flag highlight", () => {
   it("marks the offending part of each of the 14 flagged cells", () => {

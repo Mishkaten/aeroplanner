@@ -14,7 +14,7 @@ import { applyPatch } from "../patch";
 import { validate } from "../validate";
 
 const seed = fullDemoState();
-const ctx: ParseCtx = { companyIcao: "PHC", baseIcao: "UGTB", airports: seed.airports, aircraft: seed.aircraft };
+const ctx: ParseCtx = { companyIcao: "PHC", baseIcao: "UGTB", airports: seed.airports, permitRules: seed.permitRules, aircraft: seed.aircraft };
 const cms: ParseCtx = { ...ctx, companyIcao: "CMS" };
 
 const line = (text: string, o: Partial<RawLine> = {}): RawLine => ({

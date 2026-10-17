@@ -54,7 +54,7 @@ describe("seed totals (PRD 9.8)", () => {
   });
 
   it("has 3 urgent permit rows: PHC501 Serbia and Romania, PHC601 Kazakhstan", () => {
-    const urgent = urgentRows(boardRows(state));
+    const urgent = urgentRows(boardRows(state), state.clock!);
     expect(urgent.map((r) => `${fullFlight(r.leg)} ${r.permit.countryCode} ${r.permit.type}`)).toEqual([
       "PHC501 RS landing",
       "PHC501 RO overflight",

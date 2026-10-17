@@ -52,7 +52,7 @@ export function mkLeg(s: LegSpec): Leg {
 }
 
 export function permitsFor(leg: Leg, status: Permit["status"] = "obtained"): Permit[] {
-  return requiredPermits(leg.depIcao, leg.arrIcao, idx).map((r) => newPermit(leg, r, status));
+  return requiredPermits(leg.depIcao, leg.arrIcao, base.permitRules).map((r) => newPermit(leg, r, status));
 }
 
 export function stateWith(specs: LegSpec[], opts: { permits?: "obtained" | "pending" | "none"; blocks?: MaintenanceBlock[] } = {}): DomainState {

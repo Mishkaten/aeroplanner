@@ -1,7 +1,8 @@
 import { effectiveBlocks } from "./validate";
 import { isActive, throughGroups } from "./legs";
 import { COUNTRY_NAMES } from "./airports";
-import { DAY, DEMO_CLOCK, DEMO_CLOCK_MS, HOUR, ms, utcDate, iso, dateMs, addDaysIso } from "./time";
+import { effectiveClock } from "./clock";
+import { DAY, HOUR, ms, utcDate, iso, dateMs, addDaysIso } from "./time";
 import type { CountryCode, DomainState, Leg, Permit, ValidationIssue } from "./types";
 
 export interface Counts {
@@ -22,7 +23,7 @@ export function activeLegs(legs: Leg[]): Leg[] {
   return legs.filter(isActive);
 }
 
-export function legsInNext7Days(legs: Leg[], clock: string = DEMO_CLOCK): number {
+export function legsInNext7Days(legs: Leg[], clock: string): number {
   const from = ms(clock);
   return legs.filter((l) => isActive(l) && ms(l.etdUtc) >= from && ms(l.etdUtc) < from + 7 * DAY).length;
 }
@@ -45,13 +46,13 @@ export function boardRows(state: DomainState): PermitRow[] {
 }
 
 /** Urgent: ETD from the demo clock up to and including clock + 48 h, permit not obtained. */
-export function urgentRows(rows: PermitRow[], clock: string = DEMO_CLOCK): PermitRow[] {
+export function urgentRows(rows: PermitRow[], clock: string): PermitRow[] {
   const from = ms(clock);
   const to = from + 48 * HOUR;
   return rows.filter((r) => r.permit.status !== "obtained" && ms(r.leg.etdUtc) >= from && ms(r.leg.etdUtc) <= to);
 }
 
-export function countsFor(state: DomainState, issues: ValidationIssue[], clock: string = DEMO_CLOCK): Counts {
+export function countsFor(state: DomainState, issues: ValidationIssue[], clock: string = effectiveClock(state)): Counts {
   const active = activeLegs(state.legs);
   const tg = throughGroups(state.legs);
   return {
@@ -77,7 +78,7 @@ export interface AvailabilityRow {
 }
 
 /** Fleet availability for 14 days from the demo clock's date. A day takes the worst state of any block touching it. */
-export function fleetAvailability(state: DomainState, days = 14, clock: string = DEMO_CLOCK): AvailabilityRow[] {
+export function fleetAvailability(state: DomainState, days = 14, clock: string = effectiveClock(state)): AvailabilityRow[] {
   const blocks = effectiveBlocks(state, clock);
   const start = utcDate(clock);
   return state.aircraft.map((a) => ({
@@ -110,4 +111,4 @@ export function permitCountsByCountry(rows: PermitRow[]): { code: CountryCode; n
     .sort((a, b) => b.count - a.count || (a.name < b.name ? -1 : 1));
 }
 
-export { iso, DEMO_CLOCK_MS };
+export { iso };

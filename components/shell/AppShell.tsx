@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Moon, Plane, RotateCcw, Search, Sun } from "lucide-react";
+import { Briefcase, Mail, Moon, Plane, RotateCcw, Search, Sun } from "lucide-react";
 import { Toaster } from "sonner";
 import { NAV } from "./nav";
 import { applyTheme, type Theme } from "@/lib/theme";
-import { useDemo, type RangeSel } from "@/lib/store";
+import { useDemo } from "@/lib/store";
+import { RangeControl } from "./RangeControl";
 import { useUi } from "@/lib/ui-store";
 import { derive } from "@/lib/derived";
 import { StoreBoot } from "./StoreBoot";
@@ -15,15 +16,14 @@ import { ResetDialog, HelpDialog } from "./Dialogs";
 import { useGlobalShortcuts } from "./shortcuts";
 import { LegDrawerHost } from "@/components/leg/LegDrawerHost";
 import { submitGlobalSearch } from "@/lib/search";
+import { FEEDBACK_EMAIL, WORKSPACE_MODE } from "@/lib/mode";
+import { useWorkspace } from "@/lib/workspace";
+import { LoginScreen } from "./LoginScreen";
+import { SyncStatus } from "./SyncStatus";
 
-const RANGE_OPTIONS: { value: string; label: string }[] = [
-  { value: "all", label: "14 Sep to 4 Oct 2026" },
-  { value: "0", label: "Week 1, 14 to 20 Sep" },
-  { value: "1", label: "Week 2, 21 to 27 Sep" },
-  { value: "2", label: "Week 3, 28 Sep to 4 Oct" },
-];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+
+function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const theme = useUi((s) => s.theme);
@@ -35,7 +35,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const announce = useUi((s) => s.announce);
   const data = useDemo((s) => s.data);
   const banner = useDemo((s) => s.bannerDismissed);
-  const range = useDemo((s) => s.range);
+  const email = useWorkspace((s) => s.email);
+  const co = data.company;
+  const navItems = WORKSPACE_MODE ? [...NAV, { id: "workspace", label: "Workspace", href: "/workspace", Icon: Briefcase }] : NAV;
+  const airline = WORKSPACE_MODE ? co.legalName || "Your airline" : "Phasis Air Cargo";
 
   useGlobalShortcuts(searchRef);
 
@@ -50,14 +53,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isCurrent = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href.replace(/\/$/, "")));
 
-  const current = NAV.find((n) => isCurrent(n.href));
+  const current = navItems.find((n) => isCurrent(n.href));
   useEffect(() => {
-    document.title = `${current?.label ?? "AeroPlanner"} | AeroPlanner, Phasis Air Cargo demo`;
+    document.title = `${current?.label ?? "AeroPlanner"} | AeroPlanner${WORKSPACE_MODE ? "" : ", Phasis Air Cargo demo"}`;
   }, [current?.label]);
 
   return (
     <>
-      <StoreBoot />
       <a className="skip" href="#main">
         Skip to main content
       </a>
@@ -67,10 +69,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Plane size={26} aria-hidden="true" color="#6FA1FF" />
             <div>
               <b>AeroPlanner</b>
-              <small>Phasis Air Cargo</small>
+              <small>{airline}</small>
             </div>
           </div>
-          {NAV.map(({ id, label, href, Icon }) => {
+          {navItems.map(({ id, label, href, Icon }) => {
             const n = badges[id];
             return (
               <Link key={id} href={href} prefetch={false} className="navb" aria-current={isCurrent(href) ? "page" : undefined}>
@@ -85,17 +87,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
           <div className="sidefoot">
-            Fictional demo operator
+            {WORKSPACE_MODE ? "Test workspace" : "Fictional demo operator"}
             <br />
-            <span className="mono">PHC / P7 / UGTB/TBS</span>
+            <span className="mono">{WORKSPACE_MODE ? `${co.icao || "?"} / ${co.iata || "?"} / ${co.baseIcao}` : "PHC / P7 / UGTB/TBS"}</span>
           </div>
         </nav>
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="top">
             <div className="leading-tight">
-              <b>Phasis Air Cargo</b>
+              <b>{airline}</b>
               <div className="hint">
-                Fictional demo operator <span className="mono">PHC / P7 / UGTB/TBS</span>
+                {WORKSPACE_MODE ? "Test workspace" : "Fictional demo operator"}{" "}
+                <span className="mono">{WORKSPACE_MODE ? `${co.icao || "?"} / ${co.iata || "?"} / ${co.baseIcao}` : "PHC / P7 / UGTB/TBS"}</span>
               </div>
             </div>
             <span className="utc">
@@ -115,28 +118,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <input ref={searchRef} placeholder="Search flight, tail or airport, then Enter" aria-label="Global search" />
               <span className="kbd" aria-hidden="true">/</span>
             </form>
-            <label className="fbar" style={{ gap: 6 }}>
-              Range
-              <select
-                className="sel"
-                value={String(range)}
-                aria-label="Date range"
-                onChange={(e) => {
-                  const v = e.target.value;
-                  useDemo.getState().setRange(v === "all" ? "all" : (Number(v) as RangeSel));
-                }}
-              >
-                {RANGE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <RangeControl />
             <span className="grow" />
-            <button className="btn sm" onClick={() => useUi.getState().setResetOpen(true)}>
-              <RotateCcw size={14} aria-hidden="true" /> Reset demo data
-            </button>
+            {WORKSPACE_MODE ? (
+              <>
+                <SyncStatus />
+                <a
+                  className="btn sm"
+                  href={`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("AeroPlanner feedback")}&body=${encodeURIComponent(`Page: ${pathname}\n\nWhat happened:\n\nWhat I expected:\n`)}`}
+                >
+                  <Mail size={14} aria-hidden="true" /> Feedback
+                </a>
+              </>
+            ) : (
+              <button className="btn sm" onClick={() => useUi.getState().setResetOpen(true)}>
+                <RotateCcw size={14} aria-hidden="true" /> Reset demo data
+              </button>
+            )}
             <button className="btn sm" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
               {theme === "dark" ? <Sun size={14} aria-hidden="true" /> : <Moon size={14} aria-hidden="true" />}
               {theme === "dark" ? "Light" : "Dark"}
@@ -145,13 +143,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ?
             </button>
             <div style={{ position: "relative" }}>
-              <button className="btn sm" aria-label="OP Ops planner, user menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-                <b>OP</b> Ops planner
+              <button className="btn sm" aria-label={WORKSPACE_MODE ? `${email ?? "User"}, user menu` : "OP Ops planner, user menu"} aria-expanded={menu} onClick={() => setMenu(!menu)}>
+                {WORKSPACE_MODE ? (
+                  <b>{(email ?? "?").slice(0, 2).toUpperCase()}</b>
+                ) : (
+                  <>
+                    <b>OP</b> Ops planner
+                  </>
+                )}
               </button>
               {menu && (
                 <div className="card" style={{ position: "absolute", right: 0, top: 34, width: 240, padding: 10, display: "flex", flexDirection: "column", gap: 6, boxShadow: "var(--shadow)", zIndex: 40 }}>
                   <small className="lbl">Signed in as</small>
-                  <span>Ops planner (demo user, no login)</span>
+                  <span>{WORKSPACE_MODE ? email : "Ops planner (demo user, no login)"}</span>
+                  {WORKSPACE_MODE && (
+                    <button className="btn sm" onClick={() => void useWorkspace.getState().signOut()}>
+                      Sign out
+                    </button>
+                  )}
                   {presenter && (
                     <>
                       <small className="lbl" style={{ marginTop: 6 }}>Preview list states</small>
@@ -180,12 +189,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           {!banner && (
             <div className="demo">
-              <b>Demo data</b>
-              <span>Fictional operator, all permit numbers are fake. Edits live in this session only.</span>
+              <b>{WORKSPACE_MODE ? "Test workspace" : "Demo data"}</b>
+              <span>
+                {WORKSPACE_MODE
+                  ? "Shared by everyone with the login. Changes save automatically and the last save wins. Start with Import from Excel or add your fleet."
+                  : "Fictional operator, all permit numbers are fake. Edits live in this session only."}
+              </span>
               <span className="grow" />
-              <button className="btn sm" onClick={() => useUi.getState().setResetOpen(true)}>
-                Reset demo
-              </button>
+              {!WORKSPACE_MODE && (
+                <button className="btn sm" onClick={() => useUi.getState().setResetOpen(true)}>
+                  Reset demo
+                </button>
+              )}
               <button className="btn sm" onClick={() => useDemo.getState().dismissBanner()} aria-label="Dismiss banner">
                 Dismiss
               </button>
@@ -200,7 +215,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <p>
           <b>Open on a larger screen.</b>
           <br />
-          AeroPlanner is a desktop demo and needs a window at least 1024 px wide.
+          AeroPlanner is a desktop app and needs a window at least 768 px wide.
         </p>
       </div>
       <LegDrawerHost />
@@ -210,6 +225,45 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {announce}
       </div>
       <Toaster position="bottom-right" closeButton visibleToasts={3} />
+    </>
+  );
+}
+
+/** Gate for the shared workspace: sign-in, loading and error screens until the data has arrived. */
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const status = useWorkspace((s) => s.status);
+  const error = useWorkspace((s) => s.error);
+  const gated = WORKSPACE_MODE && status !== "ready";
+  return (
+    <>
+      <StoreBoot />
+      {gated ? (
+        status === "signedout" ? (
+          <LoginScreen />
+        ) : status === "error" ? (
+          <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div className="card empty" role="alert" style={{ width: "min(480px, 100%)" }}>
+              <span className="b b-er">Error</span>
+              <b>Could not load the workspace</b>
+              <span>{error}</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn pri" onClick={() => void useWorkspace.getState().reload(true)}>
+                  Try again
+                </button>
+                <button className="btn" onClick={() => void useWorkspace.getState().signOut()}>
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </main>
+        ) : (
+          <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }} aria-busy="true">
+            <span className="hint">Loading the workspace...</span>
+          </main>
+        )
+      ) : (
+        <ShellInner>{children}</ShellInner>
+      )}
     </>
   );
 }

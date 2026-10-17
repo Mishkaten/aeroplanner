@@ -41,9 +41,9 @@ describe("leg drawer form (S3)", () => {
   });
 
   it("S3-1 permits follow the route: TBS to ALA is Kazakhstan landing, ATH to TBS needs none", () => {
-    expect(requiredPermits("UGTB", "UAAA", idx).map((p) => `${p.countryCode} ${p.type}`)).toEqual(["KZ landing"]);
-    expect(requiredPermits("UGTB", "LGAV", idx).map((p) => `${p.countryCode} ${p.type}`)).toEqual(["GR landing"]);
-    expect(requiredPermits("LGAV", "UGTB", idx)).toEqual([]);
+    expect(requiredPermits("UGTB", "UAAA", state.permitRules).map((p) => `${p.countryCode} ${p.type}`)).toEqual(["KZ landing"]);
+    expect(requiredPermits("UGTB", "LGAV", state.permitRules).map((p) => `${p.countryCode} ${p.type}`)).toEqual(["GR landing"]);
+    expect(requiredPermits("LGAV", "UGTB", state.permitRules)).toEqual([]);
   });
 
   it("builds a stable id from date, full number, departure IATA and aircraft letter", () => {

@@ -1,5 +1,5 @@
 import { fullFlight } from "../legs";
-import type { DomainState, Leg, Permit, StatePatch } from "../types";
+import type { DomainState, Leg, MaintenanceBlock, Permit, StatePatch } from "../types";
 
 /** RV6 natural key: full flight number, ETD instant, departure ICAO and aircraft. */
 export const naturalKey = (l: Pick<Leg, "flightNumber" | "suffix" | "etdUtc" | "depIcao" | "aircraftId">): string =>
@@ -9,7 +9,7 @@ export const naturalKey = (l: Pick<Leg, "flightNumber" | "suffix" | "etdUtc" | "
  * Idempotent import: a leg whose key exists is updated, otherwise inserted. Nothing is deleted.
  * Importing the sample twice leaves 90 legs.
  */
-export function importPatch(data: DomainState, legs: Leg[], permits: Permit[]): { patch: StatePatch; inserted: number; updated: number } {
+export function importPatch(data: DomainState, legs: Leg[], permits: Permit[], blocks: MaintenanceBlock[] = []): { patch: StatePatch; inserted: number; updated: number } {
   const existing = new Map(data.legs.map((l) => [naturalKey(l), l]));
   const havePermit = new Set(data.permits.map((p) => p.id));
   const patch: StatePatch = [];
@@ -40,6 +40,11 @@ export function importPatch(data: DomainState, legs: Leg[], permits: Permit[]): 
       patch.push({ op: "insert", coll: "permits", value: { ...p, legId, id } as never });
       havePermit.add(id);
     }
+  }
+  const haveBlock = new Set(data.blocks.map((b) => b.id));
+  for (const b of blocks) {
+    if (haveBlock.has(b.id)) patch.push({ op: "set", coll: "blocks", id: b.id, value: { endUtc: b.endUtc, startUtc: b.startUtc, kind: b.kind } });
+    else patch.push({ op: "insert", coll: "blocks", value: b as never });
   }
   return { patch, inserted, updated };
 }

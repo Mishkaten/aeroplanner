@@ -1,12 +1,14 @@
 import { buildRow } from "./parse";
 import { readWorkbook } from "./sheet";
-import type { ImportRow, ParseCtx, SheetStructure } from "./types";
+import type { FleetFound, ImportRow, MaintenanceDay, ParseCtx, SheetStructure } from "./types";
 
 export interface ImportResult {
   fileName: string;
   structure: SheetStructure;
   rows: ImportRow[];
   unknownAircraft: string[];
+  maintenance: MaintenanceDay[];
+  fleet: FleetFound | null;
 }
 
 export interface Progress {
@@ -35,5 +37,5 @@ export async function parseWorkbook(data: ArrayBuffer | Uint8Array, fileName: st
     }
   }
   onProgress({ pct: 100, parsed: rows.length, stage: "Done" });
-  return { fileName, structure: wb.structure, rows, unknownAircraft: wb.unknownAircraft };
+  return { fileName, structure: wb.structure, rows, unknownAircraft: wb.unknownAircraft, maintenance: wb.maintenance, fleet: wb.fleet };
 }

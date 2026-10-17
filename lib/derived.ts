@@ -1,3 +1,4 @@
+import { effectiveClock } from "./clock";
 import { indexAirports, type AirportIndex } from "./airports";
 import { isActive, throughGroups, type ThroughGroups } from "./legs";
 import { permitKey, requiredPermits } from "./permits";
@@ -20,17 +21,20 @@ export interface Derived {
   permitState: Map<string, PermitState>;
   board: PermitRow[];
   urgent: PermitRow[];
+  /** The "now" this was computed for: the state's pinned clock or the real time. */
+  clock: string;
 }
 
 const cache = new WeakMap<DomainState, Derived>();
 
 /** Everything derived from the stored state. Cached per state object, so every screen shares one validation run. */
 export function derive(state: DomainState): Derived {
+  const clock = effectiveClock(state);
   const hit = cache.get(state);
-  if (hit) return hit;
+  if (hit && hit.clock === clock) return hit;
 
   const idx = indexAirports(state.airports);
-  const { issues, exemptions } = validateAll(state);
+  const { issues, exemptions } = validateAll(state, clock);
   const legById = new Map(state.legs.map((l) => [l.id, l]));
   const aircraftById = new Map(state.aircraft.map((a) => [a.id, a]));
 
@@ -55,7 +59,7 @@ export function derive(state: DomainState): Derived {
       permitState.set(l.id, "cancelled");
       continue;
     }
-    const need = requiredPermits(l.depIcao, l.arrIcao, idx, state.company.baseIcao);
+    const need = requiredPermits(l.depIcao, l.arrIcao, state.permitRules);
     if (!need.length) {
       permitState.set(l.id, "none");
       continue;
@@ -78,7 +82,7 @@ export function derive(state: DomainState): Derived {
     idx,
     issues,
     exemptions,
-    counts: countsFor(state, issues),
+    counts: countsFor(state, issues, clock),
     legById,
     aircraftById,
     issuesByLeg,
@@ -86,7 +90,8 @@ export function derive(state: DomainState): Derived {
     permitsByLeg,
     permitState,
     board,
-    urgent: urgentRows(board),
+    urgent: urgentRows(board, clock),
+    clock,
   };
   cache.set(state, d);
   return d;

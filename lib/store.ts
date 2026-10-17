@@ -4,19 +4,22 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { toast } from "sonner";
 import { applyPatch } from "./patch";
-import { fullDemoState, emptyScheduleState } from "./seed";
+import { fullDemoState, emptyScheduleState, blankWorkspaceState } from "./seed";
+import { WORKSPACE_MODE } from "./mode";
 import { derive } from "./derived";
 import { fullFlight, isActive } from "./legs";
 import { draftPermitPatch, type DraftPermit } from "./permits";
 import { importPatch } from "./import/upsert";
-import { ms } from "./time";
-import type { Aircraft, Company, DomainState, Leg, Permit, StatePatch } from "./types";
+import type { DateRange } from "./schedule";
+import type { Aircraft, Company, DomainState, Leg, MaintenanceBlock, Permit, StatePatch } from "./types";
 
 export const STORE_KEY = "aeroplanner.demo.v1";
-export const STORE_VERSION = 1;
+export const STORE_VERSION = 2;
 export const MAX_CHECKLIST_LEGS = 40;
 
-export type RangeSel = "all" | 0 | 1 | 2;
+/** The demo season: three weeks from Mon 14 Sep 2026. */
+export const DEMO_RANGE: DateRange = { from: "2026-09-14", to: "2026-10-04" };
+export type RangeSel = DateRange | null; // null: automatic (three weeks from this week or the first leg)
 export type Layout = "table" | "gantt";
 export type CalendarMode = "dates" | "weekday";
 export type ResetKind = "full" | "empty";
@@ -36,7 +39,8 @@ interface DemoStore {
   setPermitStatus: (permitId: string, status: Permit["status"], number?: string) => void;
   saveAircraft: (a: Aircraft, isNew: boolean) => void;
   saveCompany: (c: Company) => void;
-  importLegs: (legs: Leg[], permits: Permit[]) => { inserted: number; updated: number };
+  patchCompany: (p: Partial<Company>) => void;
+  importLegs: (legs: Leg[], permits: Permit[], blocks?: MaintenanceBlock[]) => { inserted: number; updated: number };
   addAircraftToStore: (a: Aircraft) => void;
 
   toggleSelect: (legId: string) => void;
@@ -51,10 +55,10 @@ interface DemoStore {
 }
 
 const initial = () => ({
-  data: fullDemoState(),
+  data: WORKSPACE_MODE ? blankWorkspaceState() : fullDemoState(),
   bannerDismissed: false,
   selection: [] as string[],
-  range: "all" as RangeSel,
+  range: (WORKSPACE_MODE ? null : DEMO_RANGE) as RangeSel,
   layout: "table" as Layout,
   calendar: "dates" as CalendarMode,
 });
@@ -155,13 +159,15 @@ export const useDemo = create<DemoStore>()(
           raw([{ op: "insert", coll: "aircraft", value: a as never }]);
         },
 
+        patchCompany: (p) => set((s) => ({ data: { ...s.data, company: { ...s.data.company, ...p } } })),
+
         saveCompany: (c) => {
           set((s) => ({ data: { ...s.data, company: c } }));
           toast.success("Company profile saved");
         },
 
-        importLegs: (legs, permits) => {
-          const { patch, inserted, updated } = importPatch(get().data, legs, permits);
+        importLegs: (legs, permits, blocks) => {
+          const { patch, inserted, updated } = importPatch(get().data, legs, permits, blocks);
           raw(patch);
           return { inserted, updated };
         },
@@ -206,7 +212,8 @@ export const useDemo = create<DemoStore>()(
       // A stored version that does not match the app version is discarded silently.
       migrate: () => initial() as never,
       partialize: (s) => ({
-        data: s.data,
+        // In the shared workspace the data lives on the server, not in this browser.
+        ...(WORKSPACE_MODE ? {} : { data: s.data }),
         bannerDismissed: s.bannerDismissed,
         selection: s.selection,
         range: s.range,
@@ -221,11 +228,4 @@ export const useDemo = create<DemoStore>()(
 export function liveSelection(selection: string[], data: DomainState): string[] {
   const ok = new Set(data.legs.filter(isActive).map((l) => l.id));
   return selection.filter((id) => ok.has(id));
-}
-
-export function weekIndexOf(etdUtc: string): 0 | 1 | 2 | null {
-  const t = ms(etdUtc);
-  const start = ms("2026-09-14T00:00:00Z");
-  const w = Math.floor((t - start) / (7 * 86_400_000));
-  return w >= 0 && w <= 2 ? (w as 0 | 1 | 2) : null;
 }

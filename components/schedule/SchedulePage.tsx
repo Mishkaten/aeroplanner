@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { derive } from "@/lib/derived";
 import { toast } from "sonner";
-import { daysForRange, filtersActive, legMatches, planMove, rangeLabel } from "@/lib/schedule";
+import { daysBetween, filtersActive, legMatches, planMove, rangeLabel, resolveRange } from "@/lib/schedule";
 import { fullFlight, isActive } from "@/lib/legs";
 import { useDemo, liveSelection } from "@/lib/store";
 import { useUi, type ScheduleFilters } from "@/lib/ui-store";
@@ -27,7 +27,9 @@ export function SchedulePage() {
   const focusNonce = useUi((s) => s.focusNonce);
   const d = derive(data);
 
-  const days = useMemo(() => daysForRange(range, data.legs), [range, data.legs]);
+  const today = d.clock.slice(0, 10);
+  const resolved = useMemo(() => resolveRange(range, data.legs, today), [range, data.legs, today]);
+  const days = useMemo(() => daysBetween(resolved), [resolved]);
   const dayStart = dateMs(days[0]);
   const dayEnd = dateMs(days[days.length - 1]) + DAY;
 
@@ -67,7 +69,7 @@ export function SchedulePage() {
         <div>
           <h1>Schedule</h1>
           <p>
-            {activeCount} active {activeCount === 1 ? "leg" : "legs"} in {rangeLabel(range)}. Every aircraft header comes from the Fleet registry.
+            {activeCount} active {activeCount === 1 ? "leg" : "legs"} in {rangeLabel(resolved)}. Every aircraft header comes from the Fleet registry.
           </p>
         </div>
         <span className="grow" />

@@ -93,7 +93,7 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
     mode === "new" ? "Add leg" : mode === "import" ? `Fix imported row ${importCtx?.cell ?? ""}` : leg ? `${fullFlight(leg)} ${idxLabel(leg, d.idx)}` : "Leg";
 
   // The route table only suggests. Permits are added by hand.
-  const required = result.depIcao && result.arrIcao ? requiredPermits(result.depIcao, result.arrIcao, idx, data.company.baseIcao) : [];
+  const required = result.depIcao && result.arrIcao ? requiredPermits(result.depIcao, result.arrIcao, data.permitRules) : [];
   const listed = new Set(rows.map(permitKey));
   const suggestions = required.filter((r) => !listed.has(permitKey(r)));
 

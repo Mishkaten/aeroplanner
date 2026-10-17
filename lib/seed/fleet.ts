@@ -13,6 +13,7 @@ export const SEED_COMPANY: Company = {
   checklistHeaderText: "Flight packet for crew and handling agents",
   logoDataUrl: null,
   minGroundMinutes: 60,
+  dayTagMode: "arrival_local",
 };
 
 export const SEED_FLEET: Aircraft[] = [

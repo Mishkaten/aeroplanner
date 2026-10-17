@@ -1,9 +1,15 @@
-// Reads one season sheet (PRD 7.1): aircraft header row, week banners, date labels in column A and grid cells
-// holding one leg line per line break. Merged ranges are read once from their top-left cell.
-import type { CellStyle, RawLine, SheetStructure, WorkbookResult } from "./types";
+// Reads one season sheet. Two layouts are understood:
+//   1. the demo layout: dates in column A, several legs in one cell separated by line breaks;
+//   2. the Camex layout: a fleet table at the top, one header cell per aircraft such as "AIRPLANE 4L-CMX B737-8FE(SF)",
+//      dates in a vertically merged column B, one leg per row in a merged pair of columns, and whole-day entries
+//      AOG, C-CHECK and MAINTENANCE.
+// Merged ranges are read once from their top-left cell.
+import type { CellStyle, FleetFound, MaintenanceDay, RawLine, SheetStructure, WorkbookResult } from "./types";
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-const REG = /^[A-Z0-9]{2,3}-[A-Z]{3}$/;
+const REG_ANY = /\b([A-Z0-9]{2,3}-[A-Z]{3})\b/;
+const REG_ONLY = /^[A-Z0-9]{2,3}-[A-Z]{3}$/;
+const MAINT = /^(AOG|C[- ]?CHECK|MAINTENANCE)$/i;
 
 export function colLetter(n: number): string {
   let s = "";
@@ -44,20 +50,16 @@ export function parseDateLabel(value: unknown, year: number | null): { date: str
   return { date: null, looksLikeDate: false };
 }
 
-interface ARGB {
-  r: number;
-  g: number;
-  b: number;
-}
-
 export function classifyFill(argb: string | undefined): CellStyle["fill"] {
   if (!argb || argb.length < 6) return null;
   const hex = argb.slice(-6);
-  const c: ARGB = { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) };
-  if (Number.isNaN(c.r + c.g + c.b)) return null;
-  if (c.r > 200 && c.g > 140 && c.b < 170 && c.r - c.b > 60 && c.g - c.b > 40 && Math.abs(c.r - c.g) < 70) return "amber";
-  if (c.g > c.r + 15 && c.g > c.b + 15) return "green";
-  if (c.r > c.g + 25 && c.r > c.b + 25) return "red";
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  if (Number.isNaN(r + g + b)) return null;
+  if (r > 200 && g > 140 && b < 170 && r - b > 60 && g - b > 40 && Math.abs(r - g) < 70) return "amber";
+  if (g > r + 15 && g > b + 15) return "green";
+  if (r > g + 25 && r > b + 25) return "red";
   return null;
 }
 
@@ -85,12 +87,62 @@ function styleOf(cell: AnyCell): CellStyle {
 function cellText(cell: AnyCell): string {
   const v = cell.value;
   if (v instanceof Date) return v.toISOString().slice(0, 10);
-  return String(cell.text ?? "").replace(/\r\n?/g, "\n");
+  return String(cell.text ?? "").replace(/\r\n?/g, "\n").replace(/�/g, "");
 }
+
+const kgOf = (t: string): number | null => {
+  const m = /(\d[\d.,\s]*)\s*kg/i.exec(t) ?? /^(\d[\d,\s]*)$/.exec(t.trim());
+  if (!m) return null;
+  const n = Number(m[1].replace(/[,\s]/g, ""));
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
 
 export interface ReadOptions {
   knownRegistrations: Set<string>;
   onRow?: (rowsSeen: number) => void;
+}
+
+/** The fleet table and company designators at the top of the sheet ("Aircraft ID", "ICAO Designator" ...), if there is one. */
+function readFleet(ws: { rowCount: number; columnCount: number }, get: (r: number, c: number) => AnyCell, limitRow: number): FleetFound | null {
+  const maxCol = Math.max(ws.columnCount, 1);
+  let idRow = 0;
+  for (let r = 1; r <= Math.min(limitRow, 40) && !idRow; r++)
+    for (let c = 1; c <= maxCol; c++) if (/^aircraft\s*id$/i.test(cellText(get(r, c)).trim())) idRow = r;
+  if (!idRow) return null;
+  const col = (re: RegExp): number => {
+    for (let c = 1; c <= maxCol; c++) if (re.test(cellText(get(idRow, c)).trim())) return c;
+    return 0;
+  };
+  const cType = col(/^a\/c\s*type|^type/i);
+  const cId = col(/^aircraft\s*id/i);
+  const cSn = col(/\bsn\b|serial/i);
+  const cYom = col(/yom|year/i);
+  const cMtow = col(/mtow/i);
+  const cCap = col(/capacity|payload/i);
+  const cIcao = col(/icao/i);
+  const cIata = col(/iata/i);
+  const text = (r: number, c: number) => (c ? cellText(get(r, c)).trim() : "");
+
+  const aircraft: FleetFound["aircraft"] = [];
+  for (let r = idRow + 1; r <= Math.min(idRow + 40, limitRow); r++) {
+    const reg = text(r, cId).toUpperCase();
+    if (!REG_ONLY.test(reg)) break;
+    const year = Number(text(r, cYom));
+    aircraft.push({
+      registration: reg,
+      type: text(r, cType).replace(/\s+/g, " "),
+      serialNo: text(r, cSn) || null,
+      yearOfManufacture: Number.isInteger(year) && year > 1950 ? year : null,
+      mtowKg: kgOf(text(r, cMtow)),
+      cargoPayloadKg: kgOf(text(r, cCap)),
+    });
+  }
+  if (!aircraft.length) return null;
+
+  const first = idRow + 1;
+  let name = "";
+  for (let c = 1; c <= 2 && !name; c++) name = text(first, c).replace(/[“”„"«»]/g, "").replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.)]+$/g, "").replace(/\s+/g, " ");
+  return { company: { name, icao: text(first, cIcao).toUpperCase(), iata: text(first, cIata).toUpperCase() }, aircraft };
 }
 
 export async function readWorkbook(data: ArrayBuffer | Uint8Array, fileName: string, opts: ReadOptions): Promise<WorkbookResult> {
@@ -102,57 +154,81 @@ export async function readWorkbook(data: ArrayBuffer | Uint8Array, fileName: str
   const sheet = ws.name;
   const sheetYear = /(20\d{2})/.exec(sheet) ? Number(/(20\d{2})/.exec(sheet)![1]) : null;
   const get = (r: number, c: number) => ws.getCell(r, c) as unknown as AnyCell;
-
-  // 1. aircraft header row: the first row holding at least one registration
-  let headerRow = 0;
-  const headers: { col: number; span: number; reg: string }[] = [];
   const maxCol = Math.max(ws.columnCount, 1);
-  for (let r = 1; r <= ws.rowCount && !headerRow; r++) {
+
+  // 1. aircraft header row: the first row with two or more registrations (or one, if no row has two)
+  const headerCandidates: { row: number; cells: { col: number; span: number; reg: string }[] }[] = [];
+  for (let r = 1; r <= Math.min(ws.rowCount, 60); r++) {
+    const cells: { col: number; span: number; reg: string }[] = [];
     for (let c = 1; c <= maxCol; c++) {
       const cell = get(r, c);
       if (cell.isMerged && cell.master.address !== cell.address) continue;
       const first = cellText(cell).split("\n")[0].trim().toUpperCase();
-      if (REG.test(first)) {
-        let span = 1;
-        while (c + span <= maxCol) {
-          const next = get(r, c + span);
-          if (next.isMerged && next.master.address === cell.address) span++;
-          else break;
-        }
-        headers.push({ col: c, span, reg: first });
-        headerRow = r;
+      const m = REG_ONLY.test(first) ? [first, first] : REG_ANY.exec(first);
+      if (!m) continue;
+      let span = 1;
+      while (c + span <= maxCol) {
+        const next = get(r, c + span);
+        if (next.isMerged && next.master.address === cell.address) span++;
+        else break;
       }
+      cells.push({ col: c, span, reg: m[1] });
     }
+    if (cells.length) headerCandidates.push({ row: r, cells });
   }
-  if (!headerRow) throw new Error("No aircraft header row found. Expected registrations such as 4L-PXA.");
+  const header = headerCandidates.find((h) => h.cells.length >= 2) ?? headerCandidates[0];
+  if (!header) throw new Error("No aircraft header row found. Expected registrations such as 4L-PXA or AIRPLANE 4L-CMX.");
+  const headerRow = header.row;
+  const headers = header.cells;
   const colReg = new Map<number, string>();
   for (const h of headers) for (let k = 0; k < h.span; k++) colReg.set(h.col + k, h.reg);
+  const firstAircraftCol = Math.min(...headers.map((h) => h.col));
+
+  const fleet = readFleet(ws, get, headerRow - 1);
 
   // 2. rows below the header
   const lines: RawLine[] = [];
+  const maintenance: MaintenanceDay[] = [];
   let banners = 0;
   let dateLabels = 0;
   let year = sheetYear;
   let rowsSeen = headers.length;
   for (let r = headerRow + 1; r <= ws.rowCount; r++) {
-    const a = get(r, 1);
-    const aText = cellText(a).trim();
-    const banner = /^WEEK\s*\d/i.test(aText) || (a.isMerged && a.master.address === a.address && aText !== "" && !parseDateLabel(a.value, year).looksLikeDate);
-    if (banner && aText) {
+    // the date of the row: a real date or a label in any column left of the first aircraft
+    let date: string | null = null;
+    let dateHere = false;
+    let bannerText = "";
+    for (let c = 1; c < firstAircraftCol && !date && !bannerText; c++) {
+      const cell = get(r, c);
+      const src = cell.isMerged ? cell.master : cell;
+      const own = !cell.isMerged || cell.master.address === cell.address;
+      const t = cellText(src).trim();
+      if (!t) continue;
+      if (/^WEEK\s*\d/i.test(t)) {
+        if (own) bannerText = t;
+        continue;
+      }
+      const p = parseDateLabel(src.value instanceof Date ? src.value : t, year);
+      if (p.looksLikeDate) {
+        date = p.date;
+        dateHere = own;
+        if (!p.date) dateHere = own;
+      }
+    }
+    if (bannerText) {
       banners++;
       rowsSeen++;
-      const y = /(20\d{2})/.exec(aText);
+      const y = /(20\d{2})/.exec(bannerText);
       if (y) year = Number(y[1]);
       opts.onRow?.(rowsSeen);
       continue;
     }
-    const { date, looksLikeDate } = parseDateLabel(a.value instanceof Date ? a.value : aText, year);
-    if (looksLikeDate) {
+    if (dateHere) {
       dateLabels++;
       rowsSeen++;
     }
     let cellsInRow = 0;
-    for (let c = 2; c <= maxCol; c++) {
+    for (let c = firstAircraftCol; c <= maxCol; c++) {
       const reg = colReg.get(c);
       if (!reg) continue;
       const cell = get(r, c);
@@ -168,6 +244,14 @@ export async function readWorkbook(data: ArrayBuffer | Uint8Array, fileName: str
       const style = styleOf(src);
       parts.forEach((p, i) => {
         const address = `${colLetter(c)}${r}`;
+        const mm = MAINT.exec(p);
+        if (mm && date) {
+          const k = mm[1].toUpperCase();
+          maintenance.push({ aircraftReg: reg, date, kind: k === "AOG" ? "aog" : k.startsWith("C") ? "c_check" : "maintenance", cell: address });
+          cellsInRow++;
+          rowsSeen++;
+          return;
+        }
         lines.push({
           id: `${address}#${i + 1}`,
           sheet,
@@ -190,12 +274,15 @@ export async function readWorkbook(data: ArrayBuffer | Uint8Array, fileName: str
     banners,
     dateLabels,
     legLines: lines.length,
-    rows: headers.length + banners + dateLabels + lines.length,
+    rows: headers.length + banners + dateLabels + lines.length + maintenance.length,
   };
+  const known = opts.knownRegistrations;
   return {
     fileName,
     structure,
     lines,
-    unknownAircraft: headers.map((h) => h.reg).filter((reg) => !opts.knownRegistrations.has(reg)),
+    maintenance,
+    fleet,
+    unknownAircraft: headers.map((h) => h.reg).filter((reg) => !known.has(reg)),
   };
 }

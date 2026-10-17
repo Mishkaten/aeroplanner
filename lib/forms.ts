@@ -1,13 +1,14 @@
 // Pure validation for the Fleet registry and Company profile forms (PRD 6.7, 6.9).
 import { resolveStation, type AirportIndex } from "./airports";
-import type { Aircraft, AircraftStatus, AircraftType, Company } from "./types";
+import type { Aircraft, AircraftStatus, Airport, Company, PermitRule } from "./types";
 
-export const AIRCRAFT_TYPES: AircraftType[] = ["B737-800SF", "B737-800BCF", "B767-300ER"];
+/** Suggestions only: the type field takes any text. */
+export const AIRCRAFT_TYPES: string[] = ["B737-800SF", "B737-800BCF", "B767-300ER"];
 export const REG_RE = /^[A-Z0-9]{2,3}-[A-Z]{3}$/;
 
 export interface AircraftForm {
   registration: string;
-  type: AircraftType;
+  type: string;
   serialNo: string;
   year: string;
   mtow: string;
@@ -94,6 +95,8 @@ export interface CompanyForm {
   address: string;
   opsContact: string;
   checklistHeaderText: string;
+  minGround: string;
+  dayTagMode: Company["dayTagMode"];
 }
 
 export function companyToForm(c: Company, idx: AirportIndex): CompanyForm {
@@ -108,6 +111,8 @@ export function companyToForm(c: Company, idx: AirportIndex): CompanyForm {
     address: c.address,
     opsContact: c.opsContact,
     checklistHeaderText: c.checklistHeaderText,
+    minGround: String(c.minGroundMinutes),
+    dayTagMode: c.dayTagMode ?? "arrival_local",
   };
 }
 
@@ -121,6 +126,8 @@ export function validateCompany(form: CompanyForm, current: Company, idx: Airpor
   if (!form.legalName.trim()) errors.legalName = "Enter the legal name";
   if (!/^[A-Za-z]{3}$/.test(form.icao.trim())) errors.icao = "The ICAO designator is 3 letters";
   if (!/^[A-Za-z0-9]{2}$/.test(form.iata.trim())) errors.iata = "The IATA designator is 2 characters";
+  const mg = Number(form.minGround);
+  if (!Number.isInteger(mg) || mg < 0 || mg > 1440) errors.minGround = "Whole minutes, 0 to 1440";
   const base = resolveStation(form.base, idx);
   if (!base || base.provisional) errors.base = "The base must be an airport in the Airport directory";
   if (Object.keys(errors).length) return { errors, value: null };
@@ -137,6 +144,8 @@ export function validateCompany(form: CompanyForm, current: Company, idx: Airpor
       address: form.address.trim(),
       opsContact: form.opsContact.trim(),
       checklistHeaderText: form.checklistHeaderText.trim(),
+      minGroundMinutes: mg,
+      dayTagMode: form.dayTagMode,
     },
   };
 }
@@ -149,3 +158,97 @@ export function logoProblem(file: { type: string; size: number; name: string }):
   if (file.size > MAX_LOGO_BYTES) return "The logo must be 500 KB or smaller.";
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Airports
+// ---------------------------------------------------------------------------
+export interface AirportForm {
+  icao: string;
+  iata: string;
+  name: string;
+  countryCode: string;
+  offset: string; // "+5:30", "-3", "4"
+  lat: string;
+  lon: string;
+}
+
+export const blankAirportForm = (): AirportForm => ({ icao: "", iata: "", name: "", countryCode: "", offset: "+0:00", lat: "", lon: "" });
+
+export function airportToForm(a: Airport): AirportForm {
+  const sign = a.utcOffsetMinutes < 0 ? "-" : "+";
+  const m = Math.abs(a.utcOffsetMinutes);
+  return {
+    icao: a.icao,
+    iata: a.iata,
+    name: a.name,
+    countryCode: a.countryCode,
+    offset: `${sign}${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`,
+    lat: a.lat === null ? "" : String(a.lat),
+    lon: a.lon === null ? "" : String(a.lon),
+  };
+}
+
+/** "+5:30", "-3", "4:00", "+0530" to minutes, or null. */
+export function parseOffset(text: string): number | null {
+  const m = /^([+-]?)(\d{1,2})(?::?(\d{2}))?$/.exec(text.trim());
+  if (!m) return null;
+  const mins = Number(m[2]) * 60 + Number(m[3] ?? 0);
+  if (mins > 14 * 60 || Number(m[3] ?? 0) > 59) return null;
+  return m[1] === "-" ? -mins : mins;
+}
+
+export interface AirportResult {
+  errors: Partial<Record<keyof AirportForm, string>>;
+  value: Airport | null;
+}
+
+export function validateAirport(form: AirportForm, all: Airport[], editingId: string | null): AirportResult {
+  const errors: AirportResult["errors"] = {};
+  const icao = form.icao.trim().toUpperCase();
+  const iata = form.iata.trim().toUpperCase();
+  if (!/^[A-Z]{4}$/.test(icao)) errors.icao = "ICAO is 4 letters";
+  else if (all.some((a) => a.id !== editingId && a.icao === icao)) errors.icao = `${icao} is already in the directory`;
+  if (!/^[A-Z]{3}$/.test(iata)) errors.iata = "IATA is 3 letters";
+  else if (all.some((a) => a.id !== editingId && a.iata === iata)) errors.iata = `${iata} is already in the directory`;
+  if (!form.name.trim()) errors.name = "Enter the airport name";
+  const cc = form.countryCode.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) errors.countryCode = "Country is a 2 letter code, for example GE";
+  const off = parseOffset(form.offset);
+  if (off === null) errors.offset = "Use hours from UTC, for example +4 or +5:30";
+  const num = (t: string, lo: number, hi: number) => (t.trim() === "" ? null : Number(t) >= lo && Number(t) <= hi ? Number(t) : ("bad" as const));
+  const lat = num(form.lat, -90, 90);
+  const lon = num(form.lon, -180, 180);
+  if (lat === "bad") errors.lat = "Latitude is -90 to 90";
+  if (lon === "bad") errors.lon = "Longitude is -180 to 180";
+  if (Object.keys(errors).length) return { errors, value: null };
+  return {
+    errors,
+    value: { id: editingId ?? icao, icao, iata, name: form.name.trim(), countryCode: cc, utcOffsetMinutes: off as number, lat: lat as number | null, lon: lon as number | null, provisional: false },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Permit rules
+// ---------------------------------------------------------------------------
+export interface RuleForm {
+  a: string;
+  b: string;
+  both: boolean;
+  countryCode: string;
+  type: "landing" | "overflight";
+}
+
+export function validateRule(form: RuleForm, airports: Airport[], rules: PermitRule[]): { error: string | null; value: PermitRule | null } {
+  const a = resolveStation(form.a, indexAirportsLocal(airports));
+  const b = resolveStation(form.b, indexAirportsLocal(airports));
+  if (!a) return { error: "Departure station is not in the Airport directory", value: null };
+  if (!b) return { error: "Arrival station is not in the Airport directory", value: null };
+  if (a.icao === b.icao) return { error: "The two stations must differ", value: null };
+  const cc = form.countryCode.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return { error: "Country is a 2 letter code, for example RS", value: null };
+  const id = `R-${a.icao}-${b.icao}-${cc}-${form.type}`;
+  if (rules.some((r) => r.id === id)) return { error: "That rule already exists", value: null };
+  return { error: null, value: { id, aIcao: a.icao, bIcao: b.icao, both: form.both, countryCode: cc, type: form.type } };
+}
+
+import { indexAirports as indexAirportsLocal } from "./airports";

@@ -46,3 +46,6 @@ next-env.d.ts
 
 # local a11y tooling
 /public/axe.min.js
+/scripts/private/
+
+/public/_private*

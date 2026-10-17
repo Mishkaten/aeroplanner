@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useDemo } from "@/lib/store";
 import { useUi } from "@/lib/ui-store";
 import { readTheme } from "@/lib/theme";
+import { WORKSPACE_MODE } from "@/lib/mode";
+import { useWorkspace } from "@/lib/workspace";
 
 /**
  * Runs once on the client: reads URL parameters, restores the tab session from
@@ -21,6 +23,15 @@ export function StoreBoot() {
     const ui = useUi.getState();
     ui.setPresenter(p.get("presenter") === "1");
     ui.setTheme(readTheme());
+
+    if (WORKSPACE_MODE) {
+      // The shared workspace: sign in and load from the server. The demo parameters do not apply.
+      void Promise.resolve(useDemo.persist.rehydrate()).then(async () => {
+        await useWorkspace.getState().boot();
+        useUi.getState().setHydrated();
+      });
+      return;
+    }
 
     void Promise.resolve(useDemo.persist.rehydrate()).then(() => {
       const demo = useDemo.getState();

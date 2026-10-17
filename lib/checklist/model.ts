@@ -3,7 +3,8 @@
 import { COUNTRY_NAMES, iataOf, indexAirports, isPlaceholder, type AirportIndex } from "../airports";
 import { blockMinutes, dayPlus, dayTag, fullFlight } from "../legs";
 import { permitKey, requiredPermits } from "../permits";
-import { DEMO_CLOCK, fmtDate, fmtFull, fmtHHMM, fmtDuration, ms, utcDate } from "../time";
+import { effectiveClock } from "../clock";
+import { fmtDate, fmtFull, fmtHHMM, fmtDuration, ms, utcDate } from "../time";
 import type { Aircraft, DomainState, Leg, LegType, Permit, PermitType } from "../types";
 
 export const MAX_LEGS = 40;
@@ -155,7 +156,7 @@ function routeBlock(legs: Leg[], idx: AirportIndex): ChecklistModel["route"] {
   return { points, segments, legend, note: "Schematic, not to scale" };
 }
 
-export function buildChecklistModel(state: DomainState, legIds: string[], clock: string = DEMO_CLOCK): ChecklistModel | null {
+export function buildChecklistModel(state: DomainState, legIds: string[], clock: string = effectiveClock(state)): ChecklistModel | null {
   const idx = indexAirports(state.airports);
   const wanted = new Set(legIds);
   const legs = state.legs
@@ -193,7 +194,7 @@ export function buildChecklistModel(state: DomainState, legIds: string[], clock:
   const permitRows: { sortCountry: string; etd: number; row: ChecklistPermitRow }[] = [];
   for (const l of legs) {
     const have = new Map(state.permits.filter((p) => p.legId === l.id).map((p) => [permitKey(p), p]));
-    const need = requiredPermits(l.depIcao, l.arrIcao, idx, c.baseIcao);
+    const need = requiredPermits(l.depIcao, l.arrIcao, state.permitRules);
     const typeLabel = (t: PermitType) => (t === "landing" ? "Landing" : "Overflight");
     for (const p of have.values())
       permitRows.push({

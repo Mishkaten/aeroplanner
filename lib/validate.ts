@@ -1,7 +1,8 @@
+import { effectiveClock } from "./clock";
 import { COUNTRY_NAMES, indexAirports, isPlaceholder, pairLabel, type AirportIndex } from "./airports";
 import { activeByAircraft, blockMinutes, compareLegs, fullFlight, isActive, throughGroups } from "./legs";
 import { newPermit, permitKey, permitLabel, requiredPermits, validityFor, type RequiredPermit } from "./permits";
-import { DEMO_CLOCK, DAY, HOUR, MIN, fmtDow, fmtDowTime, fmtHHMM, fmtDuration, iso, ms, utcDate } from "./time";
+import { DAY, HOUR, MIN, fmtDow, fmtDowTime, fmtHHMM, fmtDuration, iso, ms, utcDate } from "./time";
 import type {
   DomainState,
   Exemption,
@@ -18,7 +19,7 @@ import type {
 const RULE_ORDER: Record<RuleId, number> = { R1: 1, R2: 2, R3: 3, R4a: 4, R4b: 5, R5: 6, R6: 7 };
 
 /** Registry status AOG or Maintenance creates an open-ended block that starts at the demo clock. */
-export function effectiveBlocks(state: DomainState, clock: string = DEMO_CLOCK): MaintenanceBlock[] {
+export function effectiveBlocks(state: DomainState, clock: string = effectiveClock(state)): MaintenanceBlock[] {
   const out = [...state.blocks];
   for (const a of state.aircraft) {
     if (a.status === "active") continue;
@@ -118,11 +119,11 @@ function mk(
 }
 
 /** validate(state, demoClock) is a pure function (E1). Issues are sorted errors first, then whenUtc, ruleId, id. */
-export function validate(state: DomainState, clock: string = DEMO_CLOCK): ValidationIssue[] {
+export function validate(state: DomainState, clock: string = effectiveClock(state)): ValidationIssue[] {
   return validateAll(state, clock).issues;
 }
 
-export function validateAll(state: DomainState, clock: string = DEMO_CLOCK): ValidationResult {
+export function validateAll(state: DomainState, clock: string = effectiveClock(state)): ValidationResult {
   const ctx = makeCtx(state, clock);
   const exemptions: Exemption[] = [];
   const issues: ValidationIssue[] = [
@@ -398,12 +399,11 @@ function r3Fixes(ctx: Ctx, legs: Leg[], aircraftId: string, blockId: string): Fi
 function r4(ctx: Ctx): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   const windowEnd = ctx.clockMs + 48 * HOUR;
-  const base = ctx.state.company.baseIcao;
   for (const l of ctx.state.legs) {
     if (!isActive(l)) continue;
     const etd = ms(l.etdUtc);
     if (etd < ctx.clockMs) continue;
-    const required = requiredPermits(l.depIcao, l.arrIcao, ctx.idx, base);
+    const required = requiredPermits(l.depIcao, l.arrIcao, ctx.state.permitRules);
     if (!required.length) continue;
     const rows = ctx.permitsByLeg.get(l.id) ?? [];
     const rowOf = new Map(rows.map((p) => [permitKey(p), p]));
