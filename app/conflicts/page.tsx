@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { PageStub } from '@/components/shell/PageStub';
+import { ConflictsPage } from "@/components/conflicts/ConflictsPage";
 
 export default function Page() {
-  return <PageStub title="Conflicts and validation" text="Every rule runs on every edit." />;
+  return <ConflictsPage />;
 }
-

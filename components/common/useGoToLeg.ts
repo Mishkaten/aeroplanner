@@ -9,13 +9,13 @@ import { useUi } from "@/lib/ui-store";
 export function useGoToLeg() {
   const router = useRouter();
   return useCallback(
-    (legId: string) => {
+    (legId: string, layout?: "table" | "gantt") => {
       const leg = useDemo.getState().data.legs.find((l) => l.id === legId);
       if (!leg) return;
       const w = weekIndexOf(leg.etdUtc);
       const demo = useDemo.getState();
       demo.setRange(w === null ? "all" : w);
-      demo.setLayout(demo.layout);
+      if (layout) demo.setLayout(layout);
       const ui = useUi.getState();
       ui.clearFilters();
       ui.setListState("normal");
