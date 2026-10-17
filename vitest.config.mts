@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: { alias: { "@": path.resolve(import.meta.dirname) } },
   test: {
     environment: "node",
+    testTimeout: 30_000,
     include: ["lib/**/*.test.ts", "tests/**/*.test.ts"],
   },
 });

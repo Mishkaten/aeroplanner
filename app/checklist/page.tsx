@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { PageStub } from '@/components/shell/PageStub';
+import { ChecklistPage } from "@/components/checklist/ChecklistPage";
 
 export default function Page() {
-  return <PageStub title="Checklist export" text="Pick legs and export one consolidated flight packet." />;
+  return <ChecklistPage />;
 }
-
