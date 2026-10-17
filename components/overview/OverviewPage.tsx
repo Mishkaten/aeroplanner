@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { derive } from "@/lib/derived";
+import { WORKSPACE_MODE } from "@/lib/mode";
+import { GettingStarted } from "./GettingStarted";
 import { isDemoClock } from "@/lib/clock";
 import { useDemo } from "@/lib/store";
 import { fleetAvailability } from "@/lib/selectors";
@@ -40,6 +42,8 @@ export function OverviewPage() {
           </p>
         </div>
       </div>
+
+      {WORKSPACE_MODE && <GettingStarted />}
 
       <section className="kpis" aria-label="Key figures">
         <div className="kpi">

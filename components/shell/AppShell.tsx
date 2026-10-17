@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Briefcase, Mail, Moon, Plane, RotateCcw, Search, Sun } from "lucide-react";
+import { Briefcase, Compass, Mail, Moon, Plane, RotateCcw, Search, Sun } from "lucide-react";
 import { Toaster } from "sonner";
 import { NAV } from "./nav";
 import { applyTheme, type Theme } from "@/lib/theme";
@@ -20,6 +20,8 @@ import { FEEDBACK_EMAIL, WORKSPACE_MODE } from "@/lib/mode";
 import { useWorkspace } from "@/lib/workspace";
 import { LoginScreen } from "./LoginScreen";
 import { SyncStatus } from "./SyncStatus";
+import { Tour } from "./Tour";
+import { useTour } from "@/lib/tour";
 
 
 
@@ -129,6 +131,9 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 >
                   <Mail size={14} aria-hidden="true" /> Feedback
                 </a>
+                <button className="btn sm" onClick={() => useTour.getState().start(0)}>
+                  <Compass size={14} aria-hidden="true" /> Tour
+                </button>
               </>
             ) : (
               <button className="btn sm" onClick={() => useUi.getState().setResetOpen(true)}>
@@ -219,6 +224,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         </p>
       </div>
       <LegDrawerHost />
+      {WORKSPACE_MODE && <Tour />}
       <ResetDialog />
       <HelpDialog />
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">

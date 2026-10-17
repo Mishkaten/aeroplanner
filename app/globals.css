@@ -1128,3 +1128,37 @@
     display: none;
   }
 }
+
+/* Guided tour (driver.js) */
+.driver-popover.aero-tour {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  max-width: 360px;
+  padding: 16px;
+  font-family: inherit;
+}
+.driver-popover.aero-tour .driver-popover-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.driver-popover.aero-tour .driver-popover-description {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 6px;
+  color: var(--ink);
+}
+.driver-popover.aero-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: var(--panel); }
+.driver-popover.aero-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: var(--panel); }
+.driver-popover.aero-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--panel); }
+.driver-popover.aero-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--panel); }
+.driver-popover.aero-tour .driver-popover-close-btn { color: var(--ink); }
+.aero-tour-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
