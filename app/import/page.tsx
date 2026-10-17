@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { PageStub } from '@/components/shell/PageStub';
+import { ImportPage } from "@/components/import/ImportPage";
 
 export default function Page() {
-  return <PageStub title="Import from Excel" text="Turn the season sheet into structured legs." />;
+  return <ImportPage />;
 }
-

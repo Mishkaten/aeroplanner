@@ -8,6 +8,7 @@ import { fullDemoState, emptyScheduleState } from "./seed";
 import { derive } from "./derived";
 import { fullFlight, isActive } from "./legs";
 import { permitId, syncPermitPatch } from "./permits";
+import { importPatch } from "./import/upsert";
 import { ms } from "./time";
 import type { Aircraft, Company, CountryCode, DomainState, Leg, Permit, PermitType, StatePatch } from "./types";
 
@@ -164,35 +165,7 @@ export const useDemo = create<DemoStore>()(
         },
 
         importLegs: (legs, permits) => {
-          const { data } = get();
-          const keyOf = (l: Leg) => `${fullFlight(l)}|${l.etdUtc}|${l.depIcao}|${l.aircraftId}`;
-          const existing = new Map(data.legs.map((l) => [keyOf(l), l]));
-          const havePermit = new Map(data.permits.map((p) => [p.id, p]));
-          const patch: StatePatch = [];
-          let inserted = 0;
-          let updated = 0;
-          const idMap = new Map<string, string>();
-          for (const l of legs) {
-            const hit = existing.get(keyOf(l));
-            if (hit) {
-              const { id: _ignored, ...rest } = l;
-              void _ignored;
-              patch.push({ op: "set", coll: "legs", id: hit.id, value: rest });
-              idMap.set(l.id, hit.id);
-              updated++;
-            } else {
-              patch.push({ op: "insert", coll: "legs", value: l as never });
-              existing.set(keyOf(l), l);
-              idMap.set(l.id, l.id);
-              inserted++;
-            }
-          }
-          for (const p of permits) {
-            const legId = idMap.get(p.legId) ?? p.legId;
-            const row = { ...p, legId, id: p.id.replace(p.legId, legId) };
-            if (havePermit.has(row.id)) patch.push({ op: "set", coll: "permits", id: row.id, value: { status: row.status } });
-            else patch.push({ op: "insert", coll: "permits", value: row as never });
-          }
+          const { patch, inserted, updated } = importPatch(get().data, legs, permits);
           raw(patch);
           return { inserted, updated };
         },

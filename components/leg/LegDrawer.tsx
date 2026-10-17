@@ -28,7 +28,11 @@ export interface ImportCtx {
   rawText: string;
   cell: string;
   message?: string;
-  onSave: (leg: Leg) => void;
+  /** Best parse of the raw text, used to pre-fill the fields. */
+  initialForm?: Partial<LegForm>;
+  /** Permit status read from the cell marker or colour, applied to every required permit unless changed. */
+  defaultPermit: PermitStatus | null;
+  onSave: (leg: Leg, permits: Record<string, PermitStatus>) => void;
 }
 
 interface Props {
@@ -50,7 +54,9 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
 
   // The host remounts this component (key) when the stored leg changes, for example after a one-click fix,
   // so the form always starts from the stored values.
-  const [initial] = useState<LegForm>(() => (leg ? formFromLeg(leg, idx) : blankForm(data, idx, draft, "2026-09-14")));
+  const [initial] = useState<LegForm>(() =>
+    leg ? formFromLeg(leg, idx) : { ...blankForm(data, idx, draft, "2026-09-14"), ...(importCtx?.initialForm ?? {}) },
+  );
   const [form, setForm] = useState<LegForm>(initial);
   const [permitEdits, setPermitEdits] = useState<Record<string, PermitStatus>>({});
   const [showErrors, setShowErrors] = useState(false);
@@ -93,7 +99,9 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
     const built = legFromForm({ ...form, ...normaliseFlight(form.fn, form.dSuffix) }, result, data, idx, existing);
     if (!built) return;
     if (mode === "import") {
-      importCtx?.onSave(built);
+      const permits: Record<string, PermitStatus> = {};
+      for (const r of required) permits[permitKey(r)] = permitEdits[permitKey(r)] ?? importCtx?.defaultPermit ?? "pending";
+      importCtx?.onSave(built, permits);
       onClose();
       return;
     }
@@ -316,8 +324,8 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
                       {required.map((r) => {
                         const key = permitKey(r);
                         const row = stored.get(key);
-                        const status: PermitStatus = permitEdits[key] ?? row?.status ?? "pending";
-                        const noRecord = !row && !permitEdits[key];
+                        const status: PermitStatus = permitEdits[key] ?? row?.status ?? importCtx?.defaultPermit ?? "pending";
+                        const noRecord = !row && !permitEdits[key] && mode !== "import";
                         return (
                           <tr key={key}>
                             <td>{COUNTRY_NAMES[r.countryCode]}</td>
