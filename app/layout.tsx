@@ -20,8 +20,9 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_SUPABASE_URL ? "AeroPlanner | Test workspace" : "AeroPlanner | Phasis Air Cargo demo",
-  description:
-    "Demo: a messy Excel schedule becomes a validated schedule, a cleared conflict list and a flight packet. Fictional operator, fictional data.",
+  description: process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? "Test workspace: import an Excel schedule, check it, and export flight packets."
+    : "Demo: a messy Excel schedule becomes a validated schedule, a cleared conflict list and a flight packet. Fictional operator, fictional data.",
   robots: { index: false, follow: false },
 };
 

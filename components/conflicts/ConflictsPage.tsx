@@ -5,6 +5,7 @@ import { useState } from "react";
 import { derive } from "@/lib/derived";
 import { useDemo } from "@/lib/store";
 import { useUi } from "@/lib/ui-store";
+import { WORKSPACE_MODE } from "@/lib/mode";
 import { RULES, RULE_TYPE_LABEL, TYPE_FILTERS } from "@/lib/rules";
 import { fmtDow, fmtDowTime } from "@/lib/time";
 import { ListGate } from "@/components/common/ListGate";
@@ -137,10 +138,16 @@ export function ConflictsPage() {
             <div className="empty">
               <span className="b b-ok">Clear</span>
               <b>No conflicts in this view</b>
-              <span>Restore the demo data to see the seeded problems again.</span>
-              <button className="btn" onClick={resetDemo}>
-                Reset demo data
-              </button>
+              {WORKSPACE_MODE ? (
+                <span>Nothing needs attention. New problems appear here as you import or edit flights.</span>
+              ) : (
+                <>
+                  <span>Restore the demo data to see the seeded problems again.</span>
+                  <button className="btn" onClick={resetDemo}>
+                    Reset demo data
+                  </button>
+                </>
+              )}
             </div>
           )}
           {rows.length === 0 && open > 0 && (

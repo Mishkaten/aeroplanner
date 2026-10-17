@@ -198,7 +198,7 @@ function AircraftDrawer({ aircraft, onClose }: { aircraft: Aircraft | null; onCl
             </div>
           </div>
           <div className="info">
-            <span>Empty fields show a warning in the registry and appear as &quot;Missing&quot; on checklists. Setting the status to AOG or Maintenance blocks the aircraft from the demo clock onward and runs rule R3.</span>
+            <span>Empty fields show a warning in the registry and appear as &quot;Missing&quot; on checklists. Setting the status to AOG or Maintenance blocks the aircraft from now onward and runs rule R3.</span>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, padding: "12px 16px", borderTop: "1px solid var(--line)", background: "var(--panel2)" }}>

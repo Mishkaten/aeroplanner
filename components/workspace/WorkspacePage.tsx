@@ -4,14 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDemo } from "@/lib/store";
-import { blankWorkspaceState, fullDemoState } from "@/lib/seed";
+import { blankWorkspaceState } from "@/lib/seed";
 import { normalizeData, useWorkspace, type Snapshot } from "@/lib/workspace";
 import { FEEDBACK_EMAIL } from "@/lib/mode";
 import { realNow } from "@/lib/clock";
 
 type Confirm = { title: string; text: string; run: () => Promise<void> } | null;
 
-/** Backups, download and upload of the whole workspace, clearing it, and loading the demo. */
+/** Backups, download and upload of the whole workspace, and clearing it. */
 export function WorkspacePage() {
   const data = useDemo((s) => s.data);
   const email = useWorkspace((s) => s.email);
@@ -94,12 +94,6 @@ export function WorkspacePage() {
             onClick={() => setConfirm({ title: "Clear all data?", text: "Removes every leg, aircraft, permit, rule and period and starts an empty workspace for everyone. A backup is kept.", run: () => useWorkspace.getState().replaceAll(blankWorkspaceState(), "Workspace cleared") })}
           >
             Clear all data
-          </button>
-          <button
-            className="btn"
-            onClick={() => setConfirm({ title: "Load the demo data?", text: "Replaces the workspace with the fictional Phasis Air Cargo demo for everyone. A backup is kept.", run: () => useWorkspace.getState().replaceAll(fullDemoState(), "Demo data loaded") })}
-          >
-            Load demo data
           </button>
         </div>
         <span className="hint">Everyone signs in with the same login, so nobody is identified. If something is deleted by mistake, restore a backup below.</span>
