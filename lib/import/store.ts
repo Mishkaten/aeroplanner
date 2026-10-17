@@ -5,7 +5,8 @@ import { useDemo } from "../store";
 import { acceptFix, buildRow, countReady, countReview, permitStatusOf, rowsToPayload, saveFromDrawer } from "./parse";
 import { runImport } from "./run";
 import type { ImportRow, ParseCtx, SheetStructure } from "./types";
-import type { Leg, PermitStatus } from "../types";
+import type { Leg } from "../types";
+import type { DraftPermit } from "../permits";
 
 type Phase = "idle" | "running" | "review";
 
@@ -21,7 +22,7 @@ interface ImportStore {
 
   start: (buffer: ArrayBuffer, fileName: string) => Promise<void>;
   accept: (rowId: string) => void;
-  saveDrawer: (rowId: string, leg: Leg, permits: Record<string, PermitStatus>) => void;
+  saveDrawer: (rowId: string, leg: Leg, permits: DraftPermit[]) => void;
   reset: () => void;
   error_: (m: string | null) => void;
 }

@@ -102,7 +102,7 @@ describe("R2 station continuity", () => {
     expect(r2).toHaveLength(1);
     expect(r2[0].fixes[0].label).toBe("Set departure to UGTB/TBS");
   });
-  it("T-R2-7 applying the fix leaves PHC512 with FRL to TBS permits and no new issue", () => {
+  it("T-R2-7 applying the fix clears the issue, leaves hand-entered permit rows alone and adds no new issue", () => {
     const { state } = applyPatch(seed, rule(seed, "R2")[0].fixes[0].patch);
     expect(rule(state, "R2")).toHaveLength(0);
     expect(validate(state)).toHaveLength(8);

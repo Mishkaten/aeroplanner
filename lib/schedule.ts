@@ -5,7 +5,7 @@ import { addDaysIso, dateMs, DAY, ms, utcDate, isoWeekday } from "./time";
 import type { Leg, MaintenanceBlock } from "./types";
 import type { ScheduleFilters } from "./ui-store";
 import type { RangeSel } from "./store";
-import { effectiveBlocks } from "./validate";
+import { blockKindLabel, blockUntilText, effectiveBlocks, legHitsBlock } from "./validate";
 import type { DomainState } from "./types";
 
 /** UTC dates shown for a range selection. "all" covers the 3 season weeks, widened when legs lie outside them. */
@@ -67,6 +67,33 @@ export function groupByDayAircraft(legs: Leg[]): Map<string, Leg[]> {
   }
   for (const a of m.values()) a.sort((x, y) => ms(x.etdUtc) - ms(y.etdUtc) || (x.id < y.id ? -1 : 1));
   return m;
+}
+
+/**
+ * Moves a leg to another aircraft and/or another UTC date, keeping its time of day and block time.
+ * Refused when the target aircraft is AOG, in maintenance or in C-Check at that time.
+ */
+export function planMove(
+  state: DomainState,
+  leg: Leg,
+  aircraftId: string,
+  date: string,
+): { ok: true; value: Record<string, unknown> } | { ok: false; message: string } {
+  const delta = dateMs(date) - dateMs(utcDate(leg.etdUtc));
+  const etd = ms(leg.etdUtc) + delta;
+  const eta = ms(leg.etaUtc) + delta;
+  const iso = (t: number) => new Date(t).toISOString().replace(".000Z", "Z");
+  const clash = effectiveBlocks(state).find((b) => b.aircraftId === aircraftId && legHitsBlock({ etdUtc: iso(etd), etaUtc: iso(eta) }, b));
+  if (clash) {
+    const reg = state.aircraft.find((a) => a.id === aircraftId)?.registration ?? aircraftId;
+    return { ok: false, message: `${reg} is ${blockKindLabel(clash.kind)} ${blockUntilText(clash)}` };
+  }
+  const value: Record<string, unknown> = { etdUtc: iso(etd), etaUtc: iso(eta) };
+  if (aircraftId !== leg.aircraftId) {
+    value.aircraftId = aircraftId;
+    value.backupAircraftId = state.aircraft.find((a) => a.id === aircraftId)?.defaultBackupId ?? null;
+  }
+  return { ok: true, value };
 }
 
 export function blocksOnDay(state: DomainState, aircraftId: string, date: string): MaintenanceBlock[] {

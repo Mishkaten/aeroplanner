@@ -57,7 +57,16 @@ export const LegChip = memo(function LegChip({ leg, d, selected, highlighted, th
   const arr = iataOf(leg.arrIcao, d.idx);
 
   return (
-    <div className={cls} id={`leg-${leg.id}`} data-leg-id={leg.id}>
+    <div
+      className={cls}
+      id={`leg-${leg.id}`}
+      data-leg-id={leg.id}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", leg.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+    >
       <button className="legmain" onClick={() => onOpen(leg.id)}>
         <span className="r1">
           <span className="fn mono strike">{fullFlight(leg)}</span>

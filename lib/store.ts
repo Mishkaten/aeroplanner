@@ -7,10 +7,10 @@ import { applyPatch } from "./patch";
 import { fullDemoState, emptyScheduleState } from "./seed";
 import { derive } from "./derived";
 import { fullFlight, isActive } from "./legs";
-import { permitId, syncPermitPatch } from "./permits";
+import { draftPermitPatch, type DraftPermit } from "./permits";
 import { importPatch } from "./import/upsert";
 import { ms } from "./time";
-import type { Aircraft, Company, CountryCode, DomainState, Leg, Permit, PermitType, StatePatch } from "./types";
+import type { Aircraft, Company, DomainState, Leg, Permit, StatePatch } from "./types";
 
 export const STORE_KEY = "aeroplanner.demo.v1";
 export const STORE_VERSION = 1;
@@ -31,9 +31,9 @@ interface DemoStore {
   calendar: CalendarMode;
 
   commit: (patch: StatePatch, message: string, opts?: { silent?: boolean }) => void;
-  saveLeg: (leg: Leg, isNew: boolean, permitStatus?: Record<string, Permit["status"]>) => void;
+  saveLeg: (leg: Leg, isNew: boolean, permitDraft?: DraftPermit[]) => void;
   setLegStatus: (legId: string, status: Leg["status"]) => void;
-  setPermitStatus: (permitId: string, status: Permit["status"]) => void;
+  setPermitStatus: (permitId: string, status: Permit["status"], number?: string) => void;
   saveAircraft: (a: Aircraft, isNew: boolean) => void;
   saveCompany: (c: Company) => void;
   importLegs: (legs: Leg[], permits: Permit[]) => { inserted: number; updated: number };
@@ -113,24 +113,18 @@ export const useDemo = create<DemoStore>()(
           if (!opts?.silent) undoToast(message, inverse, raw);
         },
 
-        saveLeg: (leg, isNew, permitStatus) => {
+        saveLeg: (leg, isNew, permitDraft) => {
           const { data } = get();
           const idx = derive(data).idx;
+          void idx;
           let patch: StatePatch;
-          if (isNew) {
-            patch = [{ op: "insert", coll: "legs", value: leg as never }, ...syncPermitPatch(leg, [], idx, data.company.baseIcao)];
-          } else {
+          if (isNew) patch = [{ op: "insert", coll: "legs", value: leg as never }];
+          else {
             const { id, ...rest } = leg;
-            patch = [{ op: "set", coll: "legs", id, value: rest }, ...syncPermitPatch(leg, data.permits, idx, data.company.baseIcao)];
+            patch = [{ op: "set", coll: "legs", id, value: rest }];
           }
-          // Statuses chosen in the drawer's permit table apply to rows the route needs.
-          for (const [key, status] of Object.entries(permitStatus ?? {})) {
-            const [cc, type] = key.split(":");
-            const pid = permitId(leg.id, cc as CountryCode, type as PermitType);
-            const ins = patch.find((o) => o.op === "insert" && o.coll === "permits" && o.value.id === pid);
-            if (ins && ins.op === "insert") ins.value.status = status;
-            else if (data.permits.some((p) => p.id === pid)) patch.push({ op: "set", coll: "permits", id: pid, value: { status } });
-          }
+          // Permit rows are exactly what the drawer lists: nothing is added from the route automatically.
+          patch.push(...draftPermitPatch(leg, data.permits, permitDraft ?? []));
           const inverse = raw(patch);
           undoToast(`Leg ${fullFlight(leg)} ${isNew ? "added" : "saved"}`, inverse, raw);
         },
@@ -142,8 +136,10 @@ export const useDemo = create<DemoStore>()(
           undoToast(status === "cancelled" ? `${fullFlight(leg)} cancelled (CNL)` : `${fullFlight(leg)} restored`, inverse, raw);
         },
 
-        setPermitStatus: (permitId, status) => {
-          const inverse = raw([{ op: "set", coll: "permits", id: permitId, value: { status } }]);
+        setPermitStatus: (permitId, status, number) => {
+          const value: Record<string, unknown> = { status };
+          if (status === "obtained" && number?.trim()) value.number = number.trim();
+          const inverse = raw([{ op: "set", coll: "permits", id: permitId, value }]);
           undoToast(`Permit marked ${status}`, inverse, raw);
         },
 

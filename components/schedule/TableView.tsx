@@ -22,9 +22,11 @@ interface Props {
   onOpen: (id: string) => void;
   onToggleSelect: (id: string) => void;
   onToggleCancel: (id: string, cancel: boolean) => void;
+  /** Drag a leg onto another aircraft column and/or day. Keyboard route: the leg drawer. */
+  onMove: (legId: string, aircraftId: string, date: string) => void;
 }
 
-export function TableView({ state, d, days, legs, calendar, selected, focusId, focusNonce, onOpen, onToggleSelect, onToggleCancel }: Props) {
+export function TableView({ state, d, days, legs, calendar, selected, focusId, focusNonce, onOpen, onToggleSelect, onToggleCancel, onMove }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hl, setHl] = useState<string | null>(null);
 
@@ -109,7 +111,19 @@ export function TableView({ state, d, days, legs, calendar, selected, focusId, f
                   const cell = grouped.get(`${date}|${a.id}`) ?? [];
                   const blks = blocksOnDay(state, a.id, date);
                   return (
-                    <td key={a.id} style={{ verticalAlign: "top" }}>
+                    <td
+                      key={a.id}
+                      style={{ verticalAlign: "top" }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const id = e.dataTransfer.getData("text/plain");
+                        if (id) onMove(id, a.id, date);
+                      }}
+                    >
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 230 }}>
                         {blks.map((b) => {
                           const s = ms(b.startUtc);

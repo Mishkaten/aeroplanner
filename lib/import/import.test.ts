@@ -261,9 +261,10 @@ describe("sample workbook (storyline A, PRD 7.7)", async () => {
   it("a drawer fix marks the row Fixed and is authoritative", () => {
     const r = result.rows.find((x) => x.ref.text === SAMPLE_FLAGGED[4].raw)!;
     const base = fieldsToLeg(editFields(r, { depRaw: "09.00" }, ctx), ctx)!;
-    const saved = saveFromDrawer(r, base, { "HU:landing": "obtained" });
+    const saved = saveFromDrawer(r, base, [{ countryCode: "HU", type: "landing", status: "obtained", number: "HU-123" }]);
     expect([saved.status, saved.flag]).toEqual(["fixed", null]);
-    expect(rowsToPayload([saved], ctx).permits.every((p) => p.status === "obtained" || p.status === "pending")).toBe(true);
+    const p = rowsToPayload([saved], ctx).permits;
+    expect(p.map((x) => [x.countryCode, x.status, x.number])).toEqual([["HU", "obtained", "HU-123"]]);
   });
 
   it("the sample generator is deterministic", async () => {

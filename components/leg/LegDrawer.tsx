@@ -17,11 +17,14 @@ import {
   type LegForm,
 } from "@/lib/legform";
 import { fullFlight, isActive } from "@/lib/legs";
-import { permitKey, requiredPermits } from "@/lib/permits";
+import { permitKey, requiredPermits, type DraftPermit } from "@/lib/permits";
 import { resolveStation } from "@/lib/airports";
+import type { CountryCode, PermitType } from "@/lib/types";
+
+const ADD_COUNTRIES: CountryCode[] = ["CN", "KZ", "RS", "GR", "HU", "RO", "IT", "AE", "IN", "HK", "GE"];
 import { useDemo, liveSelection, MAX_CHECKLIST_LEGS } from "@/lib/store";
 import { useUi } from "@/lib/ui-store";
-import { fmtDate, fmtDow, fmtHHMM, ms, MIN } from "@/lib/time";
+import { fmtDow, fmtHHMM, ms, MIN } from "@/lib/time";
 import type { Leg, PermitStatus } from "@/lib/types";
 
 export interface ImportCtx {
@@ -30,9 +33,9 @@ export interface ImportCtx {
   message?: string;
   /** Best parse of the raw text, used to pre-fill the fields. */
   initialForm?: Partial<LegForm>;
-  /** Permit status read from the cell marker or colour, applied to every required permit unless changed. */
-  defaultPermit: PermitStatus | null;
-  onSave: (leg: Leg, permits: Record<string, PermitStatus>) => void;
+  /** Permit rows read from the cell marker or colour, pre-filled in the drawer. */
+  initialPermits: DraftPermit[];
+  onSave: (leg: Leg, permits: DraftPermit[]) => void;
 }
 
 interface Props {
@@ -43,8 +46,6 @@ interface Props {
   onClose: () => void;
 }
 
-const STATUS_LABEL: Record<PermitStatus, string> = { obtained: "Obtained", pending: "Pending", cancelled: "Cancelled" };
-const STATUS_CLS: Record<PermitStatus, string> = { obtained: "b b-ok", pending: "b b-pe", cancelled: "b b-cn" };
 
 export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
   const data = useDemo((s) => s.data);
@@ -58,12 +59,26 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
     leg ? formFromLeg(leg, idx) : { ...blankForm(data, idx, draft, "2026-09-14"), ...(importCtx?.initialForm ?? {}) },
   );
   const [form, setForm] = useState<LegForm>(initial);
-  const [permitEdits, setPermitEdits] = useState<Record<string, PermitStatus>>({});
+  const [initialRows] = useState<DraftPermit[]>(() =>
+    leg
+      ? (d.permitsByLeg.get(leg.id) ?? []).map((p) => ({ countryCode: p.countryCode, type: p.type, status: p.status, number: p.number ?? "" }))
+      : importCtx?.initialPermits ?? [],
+  );
+  const [rows, setRows] = useState<DraftPermit[]>(initialRows);
+  const [newCountry, setNewCountry] = useState<CountryCode>("KZ");
+  const [newType, setNewType] = useState<PermitType>("landing");
   const [showErrors, setShowErrors] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const result = evaluateForm(form, data, idx);
-  const dirty = JSON.stringify(form) !== JSON.stringify(initial) || Object.keys(permitEdits).length > 0;
+  const dirty = JSON.stringify(form) !== JSON.stringify(initial) || JSON.stringify(rows) !== JSON.stringify(initialRows);
+  const addRow = () => {
+    if (rows.some((r) => r.countryCode === newCountry && r.type === newType)) {
+      toast.error(`${COUNTRY_NAMES[newCountry]} ${newType} is already listed`);
+      return;
+    }
+    setRows((all) => [...all, { countryCode: newCountry, type: newType, status: "pending", number: "" }]);
+  };
   const set = (patch: Partial<LegForm>) => setForm((f) => ({ ...f, ...patch }));
 
   const requestClose = () => {
@@ -77,9 +92,10 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
   const title =
     mode === "new" ? "Add leg" : mode === "import" ? `Fix imported row ${importCtx?.cell ?? ""}` : leg ? `${fullFlight(leg)} ${idxLabel(leg, d.idx)}` : "Leg";
 
-  // Permits for the route currently in the form.
+  // The route table only suggests. Permits are added by hand.
   const required = result.depIcao && result.arrIcao ? requiredPermits(result.depIcao, result.arrIcao, idx, data.company.baseIcao) : [];
-  const stored = new Map((leg ? d.permitsByLeg.get(leg.id) ?? [] : []).map((p) => [permitKey(p), p]));
+  const listed = new Set(rows.map(permitKey));
+  const suggestions = required.filter((r) => !listed.has(permitKey(r)));
 
   const times = result.times;
   const arrAirport = result.arrIcao ? idx.byIcao.get(result.arrIcao) : undefined;
@@ -99,9 +115,7 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
     const built = legFromForm({ ...form, ...normaliseFlight(form.fn, form.dSuffix) }, result, data, idx, existing);
     if (!built) return;
     if (mode === "import") {
-      const permits: Record<string, PermitStatus> = {};
-      for (const r of required) permits[permitKey(r)] = permitEdits[permitKey(r)] ?? importCtx?.defaultPermit ?? "pending";
-      importCtx?.onSave(built, permits);
+      importCtx?.onSave(built, rows);
       onClose();
       return;
     }
@@ -109,7 +123,7 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
       toast.error("A leg with this flight number, date, departure and aircraft already exists");
       return;
     }
-    useDemo.getState().saveLeg(built, isNew, permitEdits);
+    useDemo.getState().saveLeg(built, isNew, rows);
     useUi.getState().say(`Leg ${fullFlight(built)} saved`);
     onClose();
   };
@@ -306,59 +320,91 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
               {summary ?? "Arrival summary appears when ETD and ETA are set."}
             </div>
 
-            <section>
-              <h3 style={{ margin: "0 0 6px", fontSize: 14 }}>Permits for this route</h3>
+            <section aria-labelledby="perm-h">
+              <h3 id="perm-h" style={{ margin: "0 0 6px", fontSize: 14 }}>
+                Permits for this leg
+              </h3>
               <div className="card scroll">
-                {required.length > 0 ? (
+                {rows.length > 0 ? (
                   <table className="tbl">
                     <thead>
                       <tr>
                         <th scope="col">Country</th>
                         <th scope="col">Type</th>
-                        <th scope="col">Number</th>
                         <th scope="col">Status</th>
-                        <th scope="col">Valid</th>
+                        <th scope="col">Number</th>
+                        <th scope="col">
+                          <span className="sr-only">Remove</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {required.map((r) => {
+                      {rows.map((r) => {
                         const key = permitKey(r);
-                        const row = stored.get(key);
-                        const status: PermitStatus = permitEdits[key] ?? row?.status ?? importCtx?.defaultPermit ?? "pending";
-                        const noRecord = !row && !permitEdits[key] && mode !== "import";
+                        const label = `${COUNTRY_NAMES[r.countryCode]} ${r.type}`;
+                        const upd = (p: Partial<DraftPermit>) => setRows((all) => all.map((x) => (permitKey(x) === key ? { ...x, ...p } : x)));
                         return (
                           <tr key={key}>
                             <td>{COUNTRY_NAMES[r.countryCode]}</td>
                             <td style={{ textTransform: "capitalize" }}>{r.type}</td>
-                            <td className="mono">{status === "obtained" ? row?.number ?? "Not entered" : "-"}</td>
                             <td>
-                              <span className={STATUS_CLS[status]}>{noRecord ? "No record, saves as pending" : STATUS_LABEL[status]}</span>
-                              <br />
-                              <select
-                                className="sel"
-                                style={{ height: 28, marginTop: 4 }}
-                                value={status}
-                                aria-label={`${COUNTRY_NAMES[r.countryCode]} ${r.type} permit status`}
-                                onChange={(e) => setPermitEdits((p) => ({ ...p, [key]: e.target.value as PermitStatus }))}
-                              >
+                              <select className="sel" style={{ height: 28 }} value={r.status} aria-label={`${label} permit status`} onChange={(e) => upd({ status: e.target.value as PermitStatus })}>
                                 <option value="obtained">Obtained</option>
                                 <option value="pending">Pending</option>
                                 <option value="cancelled">Cancelled</option>
                               </select>
                             </td>
-                            <td className="mono">{row?.validFromUtc && row.validToUtc ? `${fmtDate(row.validFromUtc)} to ${fmtDate(row.validToUtc)}` : "-"}</td>
+                            <td>
+                              {r.status === "obtained" ? (
+                                <input className="inp mono" style={{ height: 28, width: 150 }} value={r.number} placeholder="Permit number" aria-label={`${label} permit number`} onChange={(e) => upd({ number: e.target.value })} />
+                              ) : (
+                                <span className="hint">-</span>
+                              )}
+                            </td>
+                            <td>
+                              <button type="button" className="btn sm" aria-label={`Remove ${label} permit`} onClick={() => setRows((all) => all.filter((x) => permitKey(x) !== key))}>
+                                Remove
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
                 ) : (
-                  <div className="cardb hint">
-                    {result.depIcao && result.arrIcao ? "No third country permits needed for this route." : "Pick a departure and an arrival station to see the permits for this route."}
-                  </div>
+                  <div className="cardb hint">No permits listed. Add the countries this flight needs below. Nothing is added automatically.</div>
                 )}
               </div>
-              <small className="hint">Rows are added or removed automatically when you change the route.</small>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
+                <label className="lbl" htmlFor="np-c" style={{ margin: 0 }}>
+                  Add permit
+                </label>
+                <select id="np-c" className="sel" style={{ height: 28 }} value={newCountry} onChange={(e) => setNewCountry(e.target.value as CountryCode)}>
+                  {ADD_COUNTRIES.map((c) => (
+                    <option key={c} value={c}>
+                      {COUNTRY_NAMES[c]}
+                    </option>
+                  ))}
+                </select>
+                <select className="sel" style={{ height: 28 }} value={newType} aria-label="Permit type" onChange={(e) => setNewType(e.target.value as PermitType)}>
+                  <option value="landing">Landing</option>
+                  <option value="overflight">Overflight</option>
+                </select>
+                <button type="button" className="btn sm fix" onClick={addRow}>
+                  Add
+                </button>
+              </div>
+              {suggestions.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 6 }}>
+                  <span className="hint">Route table suggests:</span>
+                  {suggestions.map((s) => (
+                    <button key={permitKey(s)} type="button" className="btn sm" onClick={() => setRows((all) => [...all, { countryCode: s.countryCode, type: s.type, status: "pending", number: "" }])}>
+                      + {COUNTRY_NAMES[s.countryCode]} {s.type}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <small className="hint">Enter the permit number when you set a permit to Obtained. Empty prints as &quot;Not entered&quot;.</small>
             </section>
 
             <div className="fld">

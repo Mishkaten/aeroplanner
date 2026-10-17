@@ -23,6 +23,7 @@ export function PermitsPage() {
   const goTo = useGoToLeg();
   const [country, setCountry] = useState<string>("all");
   const [status, setStatus] = useState<"all" | PermitStatus>("all");
+  const [numbers, setNumbers] = useState<Record<string, string>>({});
 
   const ok = (r: PermitRow) => (country === "all" || r.permit.countryCode === country) && (status === "all" || r.permit.status === status);
   const rows = d.board.filter(ok);
@@ -39,11 +40,22 @@ export function PermitsPage() {
 
   const route = (r: PermitRow) => `${iataOf(r.leg.depIcao, d.idx)} > ${iataOf(r.leg.arrIcao, d.idx)}`;
   const reg = (r: PermitRow) => d.aircraftById.get(r.leg.aircraftId)?.registration ?? r.leg.aircraftId;
-  const act = (r: PermitRow) => (r.permit.status === "obtained" ? null : (
-    <button className="btn sm fix" onClick={() => useDemo.getState().setPermitStatus(r.permit.id, "obtained")}>
-      Mark obtained
-    </button>
-  ));
+  const act = (r: PermitRow) =>
+    r.permit.status === "obtained" ? null : (
+      <>
+        <input
+          className="inp mono"
+          style={{ width: 130, height: 28 }}
+          placeholder="Permit number"
+          aria-label={`Permit number for ${fullFlight(r.leg)} ${COUNTRY_NAMES[r.permit.countryCode]} ${r.permit.type}`}
+          value={numbers[r.permit.id] ?? ""}
+          onChange={(e) => setNumbers((n) => ({ ...n, [r.permit.id]: e.target.value }))}
+        />{" "}
+        <button className="btn sm fix" onClick={() => useDemo.getState().setPermitStatus(r.permit.id, "obtained", numbers[r.permit.id])}>
+          Mark obtained
+        </button>
+      </>
+    );
 
   return (
     <>

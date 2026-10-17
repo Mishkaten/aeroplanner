@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { derive } from "@/lib/derived";
-import { daysForRange, filtersActive, legMatches, rangeLabel } from "@/lib/schedule";
-import { isActive } from "@/lib/legs";
+import { toast } from "sonner";
+import { daysForRange, filtersActive, legMatches, planMove, rangeLabel } from "@/lib/schedule";
+import { fullFlight, isActive } from "@/lib/legs";
 import { useDemo, liveSelection } from "@/lib/store";
 import { useUi, type ScheduleFilters } from "@/lib/ui-store";
-import { ms, dateMs, DAY } from "@/lib/time";
+import { ms, dateMs, DAY, fmtDow } from "@/lib/time";
 import { ListGate } from "@/components/common/ListGate";
 import { TableView } from "./TableView";
 import { GanttView } from "./GanttView";
@@ -44,6 +45,19 @@ export function SchedulePage() {
   const open = useCallback((id: string) => useUi.getState().openLeg(id), []);
   const toggleSel = useCallback((id: string) => useDemo.getState().toggleSelect(id), []);
   const toggleCnl = useCallback((id: string, cancel: boolean) => useDemo.getState().setLegStatus(id, cancel ? "cancelled" : "planned"), []);
+
+  const move = useCallback((legId: string, aircraftId: string, date: string) => {
+    const st = useDemo.getState().data;
+    const leg = st.legs.find((l) => l.id === legId);
+    if (!leg) return;
+    const plan = planMove(st, leg, aircraftId, date);
+    if (!plan.ok) {
+      toast.error(plan.message);
+      return;
+    }
+    const reg = st.aircraft.find((a) => a.id === aircraftId)?.registration ?? aircraftId;
+    useDemo.getState().commit([{ op: "set", coll: "legs", id: legId, value: plan.value }], `${fullFlight(leg)} moved to ${reg}, ${fmtDow(date)}`);
+  }, []);
 
   const tabs = [{ id: "all", label: "All aircraft" }, ...data.aircraft.map((a) => ({ id: a.id, label: a.registration }))];
 
@@ -173,6 +187,7 @@ export function SchedulePage() {
             onOpen={open}
             onToggleSelect={toggleSel}
             onToggleCancel={toggleCnl}
+            onMove={move}
           />
         ) : (
           <GanttView state={data} d={d} days={days} legs={legs} calendar={calendar} focusId={focusId} focusNonce={focusNonce} onOpen={open} />

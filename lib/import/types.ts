@@ -1,4 +1,5 @@
-import type { Aircraft, Airport, Company, Leg, PermitStatus } from "../types";
+import type { Aircraft, Airport, Company, Leg } from "../types";
+import type { DraftPermit } from "../permits";
 
 export type FlagCode =
   | "UNPARSEABLE_LINE"
@@ -89,7 +90,7 @@ export interface ImportRow {
   status: RowStatus;
   /** Saved from the leg drawer: authoritative once set. */
   override: Leg | null;
-  overridePermits: Record<string, PermitStatus> | null;
+  overridePermits: DraftPermit[] | null;
   /** True once the user fixed the row (accept fix or drawer). */
   touched: boolean;
 }

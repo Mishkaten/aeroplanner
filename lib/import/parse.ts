@@ -1,7 +1,7 @@
 // Parser for one season-sheet leg line against the grammar in PRD 7.3, with the review flags of 7.4.
 import { indexAirports, isPlaceholder, PLACEHOLDER_ICAO, type AirportIndex } from "../airports";
 import { makeLegId } from "../legs";
-import { newPermit, requiredPermits } from "../permits";
+import { newPermit, requiredPermits, type DraftPermit } from "../permits";
 import { buildTimes, isoWeekday, ms, MIN, utcDate } from "../time";
 import type { Leg, LegType, Permit, PermitStatus } from "../types";
 import { cleanWhitespace } from "./normalise";
@@ -321,7 +321,7 @@ function rebuild(row: ImportRow, fields: Fields | null, pi: ParseIndex): ImportR
 }
 
 /** The drawer saved a corrected leg: the row is Fixed and the saved leg is authoritative. */
-export function saveFromDrawer(row: ImportRow, leg: Leg, permits: Record<string, PermitStatus>): ImportRow {
+export function saveFromDrawer(row: ImportRow, leg: Leg, permits: DraftPermit[]): ImportRow {
   return { ...row, override: leg, overridePermits: permits, flag: null, status: "fixed", touched: true };
 }
 
@@ -390,10 +390,15 @@ export function rowsToPayload(rows: ImportRow[], ctx: ParseCtx): ImportPayload {
     const leg = row.override ? { ...row.override, source: { kind: "import" as const, sheetRef: { sheet: row.ref.sheet, cell: row.ref.cell, rawText: row.ref.text } } } : fieldsToLeg(row, ctx);
     if (!leg) continue;
     legs.push(leg);
+    if (row.overridePermits) {
+      // corrected in the drawer: exactly the rows the planner listed
+      for (const d of row.overridePermits) permits.push(newPermit(leg, d, d.status, d.status === "obtained" && d.number.trim() ? d.number.trim() : null));
+      continue;
+    }
     const required = requiredPermits(leg.depIcao, leg.arrIcao, pi.idx, pi.baseIcao);
     const status = permitStatusOf(row);
     for (const r of required) {
-      const chosen = row.overridePermits?.[`${r.countryCode}:${r.type}`] ?? (leg.status === "cancelled" ? "cancelled" : status);
+      const chosen = leg.status === "cancelled" ? "cancelled" : status;
       if (chosen) permits.push(newPermit(leg, r, chosen));
     }
   }

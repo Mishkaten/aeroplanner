@@ -1,6 +1,6 @@
 import { COUNTRY_NAMES, indexAirports, isPlaceholder, pairLabel, type AirportIndex } from "./airports";
 import { activeByAircraft, blockMinutes, compareLegs, fullFlight, isActive, throughGroups } from "./legs";
-import { newPermit, permitKey, permitLabel, requiredPermits, syncPermitPatch, validityFor, type RequiredPermit } from "./permits";
+import { newPermit, permitKey, permitLabel, requiredPermits, validityFor, type RequiredPermit } from "./permits";
 import { DEMO_CLOCK, DAY, HOUR, MIN, fmtDow, fmtDowTime, fmtHHMM, fmtDuration, iso, ms, utcDate } from "./time";
 import type {
   DomainState,
@@ -268,10 +268,8 @@ function r2(ctx: Ctx): ValidationIssue[] {
       if (isPlaceholder(prev.arrIcao) || isPlaceholder(next.depIcao)) continue;
       if (prev.arrIcao === next.depIcao) continue;
       const to = pairLabel(prev.arrIcao, ctx.idx);
-      const patch: StatePatch = [
-        { op: "set", coll: "legs", id: next.id, value: { depIcao: prev.arrIcao } },
-        ...syncPermitPatch({ ...next, depIcao: prev.arrIcao }, ctx.state.permits, ctx.idx, ctx.state.company.baseIcao),
-      ];
+      // Permit rows are entered by hand, so the fix only changes the departure.
+      const patch: StatePatch = [{ op: "set", coll: "legs", id: next.id, value: { depIcao: prev.arrIcao } }];
       const ferryStart = ms(prev.etaUtc) + minGround * MIN;
       out.push(
         mk(

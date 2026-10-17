@@ -87,7 +87,31 @@ export function newPermit(leg: Pick<Leg, "id" | "etdUtc">, req: RequiredPermit, 
   };
 }
 
-export const permitKey = (p: { countryCode: CountryCode; type: PermitType }): string => `${p.countryCode}:${p.type}`;
+/** A permit row as edited in the leg drawer. Permits are entered by hand: the route table only suggests. */
+export interface DraftPermit {
+  countryCode: CountryCode;
+  type: PermitType;
+  status: PermitStatus;
+  /** Free text. Empty means "Not entered". */
+  number: string;
+}
+
+/** Patch that makes the stored rows of a leg equal to the draft list (remove, update, insert). */
+export function draftPermitPatch(leg: Pick<Leg, "id" | "etdUtc">, existing: Permit[], draft: DraftPermit[]): StatePatch {
+  const have = new Map(existing.filter((p) => p.legId === leg.id).map((p) => [permitKey(p), p]));
+  const keep = new Set(draft.map(permitKey));
+  const patch: StatePatch = [];
+  for (const [k, p] of have) if (!keep.has(k)) patch.push({ op: "remove", coll: "permits", id: p.id });
+  for (const d of draft) {
+    const number = d.status === "obtained" && d.number.trim() ? d.number.trim() : null;
+    const row = have.get(permitKey(d));
+    if (row) patch.push({ op: "set", coll: "permits", id: row.id, value: { status: d.status, number } });
+    else patch.push({ op: "insert", coll: "permits", value: newPermit(leg, d, d.status, number) as never });
+  }
+  return patch;
+}
+
+export const permitKey =(p: { countryCode: CountryCode; type: PermitType }): string => `${p.countryCode}:${p.type}`;
 
 /**
  * Rows for a leg after its route changed: rows still required are kept,
