@@ -10,6 +10,7 @@ import { useDemo, liveSelection } from "@/lib/store";
 import { useUi, type ScheduleFilters } from "@/lib/ui-store";
 import { ms, dateMs, DAY, fmtDow } from "@/lib/time";
 import { ListGate } from "@/components/common/ListGate";
+import { BulkEditDialog } from "./BulkEditDialog";
 import { ExportDialog } from "./ExportDialog";
 import { TableView } from "./TableView";
 import { GanttView } from "./GanttView";
@@ -28,6 +29,7 @@ export function SchedulePage() {
   const focusNonce = useUi((s) => s.focusNonce);
   const d = derive(data);
   const [exportOpen, setExportOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const today = d.clock.slice(0, 10);
   const resolved = useMemo(() => resolveRange(range, data.legs, today), [range, data.legs, today]);
@@ -91,6 +93,9 @@ export function SchedulePage() {
             Days + dates + ISO weekday
           </button>
         </div>
+        <button className="btn" onClick={() => setBulkOpen(true)} disabled={data.legs.length === 0}>
+          Bulk edit
+        </button>
         <button className="btn" onClick={() => setExportOpen(true)} disabled={data.legs.length === 0}>
           Export
         </button>
@@ -98,6 +103,7 @@ export function SchedulePage() {
           + Add leg <span className="kbd">N</span>
         </button>
       </div>
+      <BulkEditDialog open={bulkOpen} onOpenChange={setBulkOpen} shown={legs} selected={data.legs.filter((l) => selected.has(l.id))} />
       <ExportDialog open={exportOpen} onOpenChange={setExportOpen} shown={legs} selected={data.legs.filter((l) => selected.has(l.id))} />
 
       <ListGate>
