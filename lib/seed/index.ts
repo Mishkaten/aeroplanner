@@ -1,4 +1,5 @@
 import { DEMO_CLOCK } from "../time";
+import { defaultVersions } from "../versions";
 import type { DomainState } from "../types";
 import { SEED_AIRPORTS, starterAirports } from "./airports";
 import { SEED_COMPANY, SEED_FLEET } from "./fleet";
@@ -12,6 +13,7 @@ export function fullDemoState(opts: SeedOptions = {}): DomainState {
   return {
     clock: DEMO_CLOCK,
     permitRules,
+    ...defaultVersions(),
     company: structuredClone(SEED_COMPANY),
     aircraft,
     airports: structuredClone(SEED_AIRPORTS),
@@ -34,6 +36,7 @@ export function blankWorkspaceState(): DomainState {
   return {
     clock: null,
     permitRules: [],
+    ...defaultVersions(),
     company: {
       id: "company",
       legalName: "",

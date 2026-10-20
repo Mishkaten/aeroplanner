@@ -11,6 +11,7 @@ import { useUi, type ScheduleFilters } from "@/lib/ui-store";
 import { ms, dateMs, DAY, fmtDow } from "@/lib/time";
 import { ListGate } from "@/components/common/ListGate";
 import { BulkEditDialog } from "./BulkEditDialog";
+import { activeVersion } from "@/lib/versions";
 import { ExportDialog } from "./ExportDialog";
 import { TableView } from "./TableView";
 import { GanttView } from "./GanttView";
@@ -78,6 +79,19 @@ export function SchedulePage() {
           </p>
         </div>
         <span className="grow" />
+        {data.versions.length > 1 && (
+          <label className="hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            Version
+            <select className="sel" value={activeVersion(data).id} onChange={(e) => useDemo.getState().switchVersion(e.target.value)} aria-label="Schedule version">
+              {data.versions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                  {v.live ? " (live)" : " (draft)"}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="seg" role="group" aria-label="Layout">
           <button aria-pressed={layout === "table"} onClick={() => useDemo.getState().setLayout("table")}>
             Table

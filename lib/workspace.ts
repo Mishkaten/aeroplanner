@@ -10,6 +10,7 @@ import { blankWorkspaceState } from "./seed";
 import { WORKSPACE_MODE } from "./mode";
 import { useDemo } from "./store";
 import { defaultTzFor } from "./tzdata";
+import { canonicalState, normalizeVersions, switchVersion } from "./versions";
 import type { DomainState } from "./types";
 
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -62,6 +63,7 @@ export function normalizeData(raw: Partial<DomainState> | null | undefined): Dom
   return {
     clock: d.clock ?? null,
     permitRules: d.permitRules ?? [],
+    ...normalizeVersions(d),
     company: { ...base.company, ...(d.company ?? {}) },
     aircraft: d.aircraft ?? [],
     airports: d.airports?.length ? d.airports.map((a) => ({ ...a, id: a.id ?? a.icao, tzId: a.tzId ?? (a.provisional ? undefined : defaultTzFor(a.icao, a.utcOffsetMinutes)) })) : base.airports,
@@ -80,7 +82,10 @@ let booted = false;
 function applyRemote(data: DomainState) {
   applyingRemote = true;
   const demo = useDemo.getState();
-  useDemo.setState({ data, selection: demo.selection.filter((id) => data.legs.some((l) => l.id === id)) });
+  // The server copy has the live version in front. Keep looking at the draft this person had open, if it still exists.
+  const keep = demo.data.activeVersionId;
+  const shown = data.versions.some((v) => v.id === keep) ? switchVersion(data, keep) : data;
+  useDemo.setState({ data: shown, selection: demo.selection.filter((id) => shown.legs.some((l) => l.id === id)) });
   applyingRemote = false;
 }
 
@@ -160,7 +165,7 @@ export const useWorkspace = create<Ws>()((set, get) => ({
     set({ save: "saving" });
     const { data, error } = await (await sb())
       .from("workspace")
-      .upsert({ id: WORKSPACE_ID, data: useDemo.getState().data, updated_by: get().email })
+      .upsert({ id: WORKSPACE_ID, data: canonicalState(useDemo.getState().data), updated_by: get().email })
       .select("updated_at")
       .single();
     if (error) {
@@ -184,7 +189,7 @@ export const useWorkspace = create<Ws>()((set, get) => ({
 
   replaceAll: async (data, reason) => {
     // keep a backup of what is being replaced
-    await (await sb()).from("workspace_history").insert({ saved_by: get().email, data: useDemo.getState().data });
+    await (await sb()).from("workspace_history").insert({ saved_by: get().email, data: canonicalState(useDemo.getState().data) });
     applyRemote(data);
     useDemo.setState({ range: null, selection: [] });
     await get().saveNow();

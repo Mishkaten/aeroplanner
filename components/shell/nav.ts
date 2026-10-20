@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   MapPin,
   Scale,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ export type NavId =
   | "rules"
   | "airports"
   | "company"
+  | "versions"
   | "import";
 
 export interface NavItem {
@@ -34,6 +36,7 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   { id: "overview", label: "Overview", href: "/", Icon: LayoutDashboard },
   { id: "schedule", label: "Schedule", href: "/schedule", Icon: CalendarDays },
+  { id: "versions", label: "Versions", href: "/versions", Icon: Layers },
   { id: "conflicts", label: "Conflicts", href: "/conflicts", Icon: AlertTriangle },
   { id: "permits", label: "Permits", href: "/permits", Icon: ShieldCheck },
   { id: "checklist", label: "Checklist export", href: "/checklist", Icon: ClipboardList },

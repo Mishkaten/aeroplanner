@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Briefcase, Compass, Mail, Moon, Plane, RotateCcw, Search, Sun } from "lucide-react";
+import { Briefcase, Compass, Layers, Mail, Moon, Plane, RotateCcw, Search, Sun } from "lucide-react";
 import { Toaster } from "sonner";
 import { NAV } from "./nav";
 import { applyTheme, type Theme } from "@/lib/theme";
@@ -22,6 +22,7 @@ import { LoginScreen } from "./LoginScreen";
 import { SyncStatus } from "./SyncStatus";
 import { Tour } from "./Tour";
 import { useTour } from "@/lib/tour";
+import { activeVersion, isDraft, liveVersion } from "@/lib/versions";
 
 
 
@@ -121,6 +122,10 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               <span className="kbd" aria-hidden="true">/</span>
             </form>
             <RangeControl />
+            <Link href="/versions/" prefetch={false} className="btn sm" title="Schedule versions" aria-label={`Version ${activeVersion(data).name}, ${isDraft(data) ? "draft" : "live"}. Open versions`}>
+              <Layers size={14} aria-hidden="true" /> {activeVersion(data).name}
+              <span className={`b ${isDraft(data) ? "b-wa" : "b-ok"}`}>{isDraft(data) ? "Draft" : "Live"}</span>
+            </Link>
             <span className="grow" />
             {WORKSPACE_MODE ? (
               <>
@@ -190,6 +195,21 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          {isDraft(data) && (
+            <div className="demo" role="status" style={{ borderColor: "var(--warn, #b8860b)" }}>
+              <b>Draft: {activeVersion(data).name}</b>
+              <span>
+                You are editing a draft, not the live schedule ({liveVersion(data).name}). Every screen and export shows this draft. Nothing here changes the live schedule until you publish.
+              </span>
+              <span className="grow" />
+              <button className="btn sm" onClick={() => useDemo.getState().switchVersion(liveVersion(data).id)}>
+                Back to live
+              </button>
+              <Link className="btn sm pri" href="/versions/" prefetch={false}>
+                Versions
+              </Link>
             </div>
           )}
           {!banner && (

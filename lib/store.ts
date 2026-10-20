@@ -10,11 +10,13 @@ import { derive } from "./derived";
 import { fullFlight, isActive } from "./legs";
 import { draftPermitPatch, type DraftPermit } from "./permits";
 import { importPatch } from "./import/upsert";
+import { addVersion, publishVersion as publishV, removeVersion, renameVersion as renameV, switchVersion as switchV, validateVersionName, MAX_VERSIONS } from "./versions";
+import { realNow } from "./clock";
 import type { DateRange } from "./schedule";
 import type { Aircraft, Company, DomainState, Leg, MaintenanceBlock, Permit, StatePatch } from "./types";
 
 export const STORE_KEY = "aeroplanner.demo.v1";
-export const STORE_VERSION = 2;
+export const STORE_VERSION = 3;
 export const MAX_CHECKLIST_LEGS = 40;
 
 /** The demo season: three weeks from Mon 14 Sep 2026. */
@@ -45,6 +47,13 @@ interface DemoStore {
   patchCompany: (p: Partial<Company>) => void;
   importLegs: (legs: Leg[], permits: Permit[], blocks?: MaintenanceBlock[]) => { inserted: number; updated: number };
   addAircraftToStore: (a: Aircraft) => void;
+
+  /** Versions. Each returns an error text, or null when it worked. */
+  createVersion: (name: string, note: string, from: "copy" | "blank") => string | null;
+  switchVersion: (id: string) => void;
+  publishVersion: (id: string) => void;
+  renameVersion: (id: string, name: string, note: string) => string | null;
+  deleteVersion: (id: string) => void;
 
   toggleSelect: (legId: string) => void;
   setSelection: (ids: string[]) => void;
@@ -175,6 +184,51 @@ export const useDemo = create<DemoStore>()(
           const { patch, inserted, updated } = importPatch(get().data, legs, permits, blocks);
           raw(patch);
           return { inserted, updated };
+        },
+
+        createVersion: (name, note, from) => {
+          const { data } = get();
+          const bad = validateVersionName(name, data.versions);
+          if (bad) return bad;
+          if (data.versions.length >= MAX_VERSIONS) return `A workspace holds up to ${MAX_VERSIONS} versions. Delete one first.`;
+          const { state, id } = addVersion(data, { name, note, from, createdAt: realNow() });
+          toast.dismiss();
+          set({ data: switchV(state, id), selection: [] });
+          toast.success(`Version "${name.trim()}" created. You are editing it now; the live schedule is unchanged.`);
+          return null;
+        },
+
+        switchVersion: (id) => {
+          const { data } = get();
+          if (id === data.activeVersionId) return;
+          toast.dismiss();
+          set({ data: switchV(data, id), selection: [] });
+        },
+
+        publishVersion: (id) => {
+          const { data } = get();
+          const v = data.versions.find((x) => x.id === id);
+          if (!v || v.live) return;
+          const was = data.versions.find((x) => x.live)?.name;
+          set({ data: publishV(data, id) });
+          toast.success(`"${v.name}" is now the live schedule${was ? `. "${was}" is kept as a draft.` : "."}`);
+        },
+
+        renameVersion: (id, name, note) => {
+          const { data } = get();
+          const bad = validateVersionName(name, data.versions, id);
+          if (bad) return bad;
+          set({ data: renameV(data, id, name, note) });
+          return null;
+        },
+
+        deleteVersion: (id) => {
+          const { data } = get();
+          const v = data.versions.find((x) => x.id === id);
+          if (!v || v.live) return;
+          toast.dismiss();
+          set({ data: removeVersion(data, id), selection: [] });
+          toast.success(`Version "${v.name}" deleted`);
         },
 
         toggleSelect: (legId) => {

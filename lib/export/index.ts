@@ -2,6 +2,7 @@ import { filterLegsForExport } from "./scope";
 import { buildCsv, buildIcs, buildJson, buildPdf, buildXlsxGrid, buildXlsxList, type ExportInput } from "./formats";
 import { buildSsim } from "./ssim";
 import { buildRows } from "./rows";
+import { activeVersion, isDraft } from "../versions";
 import type { DomainState, Leg } from "../types";
 
 export type ExportFormatId = "xlsx-grid" | "xlsx-list" | "csv" | "json" | "ssim" | "ics" | "pdf";
@@ -47,7 +48,8 @@ export function exportFilename(state: DomainState, rows: { date: string }[], ext
   const dates = rows.map((r) => r.date).sort();
   const span = dates.length ? (dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]}_${dates[dates.length - 1]}`) : "empty";
   const who = (state.company.icao || "schedule").toLowerCase();
-  return `${who}-schedule-${span}.${ext}`;
+  const draft = isDraft(state) ? `-draft-${activeVersion(state).name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}` : "";
+  return `${who}-schedule${draft}-${span}.${ext}`;
 }
 
 /** Builds the file. The Excel and PDF libraries load on first use, so the initial bundle is unaffected. */

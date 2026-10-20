@@ -116,10 +116,30 @@ export interface PermitRule {
   type: PermitType;
 }
 
+/** A named copy of the schedule, for example a season or a client request. Exactly one version is live. */
+export interface ScheduleVersion {
+  id: string;
+  name: string;
+  note: string;
+  live: boolean;
+  createdAt: IsoInstant;
+}
+
+/** The legs and permits of a version that is not the one being edited. */
+export interface ParkedVersion {
+  legs: Leg[];
+  permits: Permit[];
+}
+
 export interface DomainState {
   /** The "now" used for the 48 h permit rule. null means the real clock. The demo seed pins it. */
   clock: IsoInstant | null;
   permitRules: PermitRule[];
+  /** At least one. `legs` and `permits` below always belong to the active version. */
+  versions: ScheduleVersion[];
+  activeVersionId: string;
+  /** Legs and permits of every other version, by version id. */
+  parked: Record<string, ParkedVersion>;
   company: Company;
   aircraft: Aircraft[];
   airports: Airport[];

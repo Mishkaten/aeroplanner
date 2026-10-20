@@ -1,5 +1,6 @@
 "use client";
 
+import { canonicalState } from "@/lib/versions";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -39,7 +40,7 @@ export function WorkspacePage() {
   };
 
   const download = () => {
-    const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(canonicalState(data), null, 1)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `aeroplanner-workspace-${realNow().slice(0, 10)}.json`;
