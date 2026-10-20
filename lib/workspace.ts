@@ -69,6 +69,7 @@ export function normalizeData(raw: Partial<DomainState> | null | undefined): Dom
     airports: d.airports?.length ? d.airports.map((a) => ({ ...a, id: a.id ?? a.icao, tzId: a.tzId ?? (a.provisional ? undefined : defaultTzFor(a.icao, a.utcOffsetMinutes)) })) : base.airports,
     legs: d.legs ?? [],
     permits: d.permits ?? [],
+    patterns: d.patterns ?? [],
     blocks: d.blocks ?? [],
   };
 }

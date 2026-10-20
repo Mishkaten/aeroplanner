@@ -60,7 +60,9 @@ export interface Airport {
 export type LegType = "landing" | "overflight" | "technical_stop" | "ferry";
 
 export interface LegSource {
-  kind: "seed" | "import" | "manual";
+  kind: "seed" | "import" | "manual" | "pattern" | "copy";
+  /** For kind "pattern": the recurring pattern that generated this leg. */
+  patternId?: string;
   sheetRef?: { sheet: string; cell: string; rawText: string };
 }
 
@@ -116,6 +118,42 @@ export interface PermitRule {
   type: PermitType;
 }
 
+/** One leg of a recurring rotation. Times are minutes after 00:00 on the day of the leg, in the pattern's time basis. */
+export interface PatternLeg {
+  flightNumber: string;
+  suffix: "" | "D";
+  legType: LegType;
+  depIcao: string;
+  arrIcao: string;
+  /** Days after the day the rotation starts: 0 same day, 1 next day. */
+  dayOffset: number;
+  etdMin: number;
+  /** Real block time. It stays the same across a daylight saving change. */
+  blockMin: number;
+  notes: string;
+}
+
+/**
+ * A recurring rotation: the same legs on the same weekdays between two dates, every 1 to 4 weeks. It generates
+ * ordinary dated legs and remembers which ones, so changing the pattern updates them, while a leg someone edited
+ * or cancelled by hand is left alone.
+ */
+export interface Pattern {
+  id: string;
+  name: string;
+  aircraftId: string;
+  backupAircraftId: string | null;
+  /** "utc": times are UTC. "local": times are local at each leg's departure station and follow daylight saving. */
+  basis: "utc" | "local";
+  everyWeeks: 1 | 2 | 3 | 4;
+  /** ISO weekdays (1 Monday to 7 Sunday) on which the rotation starts. */
+  days: number[];
+  /** First and last day a rotation may start. */
+  from: IsoDate;
+  to: IsoDate;
+  legs: PatternLeg[];
+}
+
 /** A named copy of the schedule, for example a season or a client request. Exactly one version is live. */
 export interface ScheduleVersion {
   id: string;
@@ -129,6 +167,7 @@ export interface ScheduleVersion {
 export interface ParkedVersion {
   legs: Leg[];
   permits: Permit[];
+  patterns: Pattern[];
 }
 
 export interface DomainState {
@@ -145,12 +184,14 @@ export interface DomainState {
   airports: Airport[];
   legs: Leg[];
   permits: Permit[];
+  /** Recurring patterns of the active version. */
+  patterns: Pattern[];
   blocks: MaintenanceBlock[];
 }
 
 export type RuleId = "R1" | "R2" | "R3" | "R4a" | "R4b" | "R5" | "R6"; // R7 produces no issue
 
-export type Coll = "legs" | "permits" | "blocks" | "aircraft" | "airports" | "permitRules";
+export type Coll = "legs" | "permits" | "patterns" | "blocks" | "aircraft" | "airports" | "permitRules";
 
 export type PatchOp =
   | { op: "set"; coll: Coll; id: string; value: Record<string, unknown> }

@@ -16,7 +16,7 @@ import type { DateRange } from "./schedule";
 import type { Aircraft, Company, DomainState, Leg, MaintenanceBlock, Permit, StatePatch } from "./types";
 
 export const STORE_KEY = "aeroplanner.demo.v1";
-export const STORE_VERSION = 3;
+export const STORE_VERSION = 4;
 export const MAX_CHECKLIST_LEGS = 40;
 
 /** The demo season: three weeks from Mon 14 Sep 2026. */

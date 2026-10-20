@@ -10,6 +10,7 @@ import {
   MapPin,
   Scale,
   Layers,
+  Repeat,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ export type NavId =
   | "airports"
   | "company"
   | "versions"
+  | "patterns"
   | "import";
 
 export interface NavItem {
@@ -36,6 +38,7 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   { id: "overview", label: "Overview", href: "/", Icon: LayoutDashboard },
   { id: "schedule", label: "Schedule", href: "/schedule", Icon: CalendarDays },
+  { id: "patterns", label: "Patterns", href: "/patterns", Icon: Repeat },
   { id: "versions", label: "Versions", href: "/versions", Icon: Layers },
   { id: "conflicts", label: "Conflicts", href: "/conflicts", Icon: AlertTriangle },
   { id: "permits", label: "Permits", href: "/permits", Icon: ShieldCheck },

@@ -19,6 +19,7 @@ export function fullDemoState(opts: SeedOptions = {}): DomainState {
     airports: structuredClone(SEED_AIRPORTS),
     legs,
     permits: seedPermits(legs, permitRules),
+    patterns: [],
     blocks: opts.stressLegs ? [] : structuredClone(SEED_BLOCKS),
   };
 }
@@ -56,6 +57,7 @@ export function blankWorkspaceState(): DomainState {
     airports: starterAirports(),
     legs: [],
     permits: [],
+    patterns: [],
     blocks: [],
   };
 }

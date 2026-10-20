@@ -27,16 +27,16 @@ export const isDraft = (s: Pick<DomainState, "versions" | "activeVersionId">): b
 
 /** Legs and permits of any version, whether it is the active one or parked. */
 export function versionContent(s: DomainState, id: string): ParkedVersion {
-  return id === s.activeVersionId ? { legs: s.legs, permits: s.permits } : (s.parked[id] ?? { legs: [], permits: [] });
+  return id === s.activeVersionId ? { legs: s.legs, permits: s.permits, patterns: s.patterns } : (s.parked[id] ?? { legs: [], permits: [], patterns: [] });
 }
 
 /** Makes another version the one being edited. The previous one is parked as it is. */
 export function switchVersion(s: DomainState, id: string): DomainState {
   if (id === s.activeVersionId || !s.versions.some((v) => v.id === id)) return s;
-  const parked = { ...s.parked, [s.activeVersionId]: { legs: s.legs, permits: s.permits } };
-  const next = parked[id] ?? { legs: [], permits: [] };
+  const parked = { ...s.parked, [s.activeVersionId]: { legs: s.legs, permits: s.permits, patterns: s.patterns } };
+  const next = parked[id] ?? { legs: [], permits: [], patterns: [] };
   delete parked[id];
-  return { ...s, activeVersionId: id, legs: next.legs, permits: next.permits, parked };
+  return { ...s, activeVersionId: id, legs: next.legs, permits: next.permits, patterns: next.patterns, parked };
 }
 
 /** What is written to the server: the live version in `legs`, drafts parked. */
@@ -50,7 +50,7 @@ export function normalizeVersions(raw: Partial<DomainState>): Pick<DomainState, 
   const fixed = versions.map((v) => ({ ...v, live: v.id === live }));
   const active = fixed.some((v) => v.id === raw.activeVersionId) ? (raw.activeVersionId as string) : live;
   const parked: Record<string, ParkedVersion> = {};
-  for (const v of fixed) if (v.id !== active && raw.parked?.[v.id]) parked[v.id] = { legs: raw.parked[v.id].legs ?? [], permits: raw.parked[v.id].permits ?? [] };
+  for (const v of fixed) if (v.id !== active && raw.parked?.[v.id]) parked[v.id] = { legs: raw.parked[v.id].legs ?? [], permits: raw.parked[v.id].permits ?? [], patterns: raw.parked[v.id].patterns ?? [] };
   return { versions: fixed, activeVersionId: active, parked };
 }
 
@@ -79,7 +79,7 @@ export interface NewVersion {
 /** Adds a version (not live, not active) and returns its id. */
 export function addVersion(s: DomainState, o: NewVersion): { state: DomainState; id: string } {
   const id = newId(s.versions);
-  const content: ParkedVersion = o.from === "copy" ? { legs: structuredCloneSafe(s.legs), permits: structuredCloneSafe(s.permits) } : { legs: [], permits: [] };
+  const content: ParkedVersion = o.from === "copy" ? { legs: structuredCloneSafe(s.legs), permits: structuredCloneSafe(s.permits), patterns: structuredCloneSafe(s.patterns) } : { legs: [], permits: [], patterns: [] };
   const v: ScheduleVersion = { id, name: o.name.trim(), note: o.note.trim(), live: false, createdAt: o.createdAt };
   return { state: { ...s, versions: [...s.versions, v], parked: { ...s.parked, [id]: content } }, id };
 }

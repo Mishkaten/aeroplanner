@@ -11,6 +11,7 @@ import { useUi, type ScheduleFilters } from "@/lib/ui-store";
 import { ms, dateMs, DAY, fmtDow } from "@/lib/time";
 import { ListGate } from "@/components/common/ListGate";
 import { BulkEditDialog } from "./BulkEditDialog";
+import { RepeatWeekDialog } from "./RepeatWeekDialog";
 import { activeVersion } from "@/lib/versions";
 import { ExportDialog } from "./ExportDialog";
 import { TableView } from "./TableView";
@@ -32,6 +33,7 @@ export function SchedulePage() {
   const d = derive(data);
   const [exportOpen, setExportOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [repeatOpen, setRepeatOpen] = useState(false);
 
   const today = d.clock.slice(0, 10);
   const resolved = useMemo(() => resolveRange(range, data.legs, today), [range, data.legs, today]);
@@ -116,6 +118,9 @@ export function SchedulePage() {
             Days + dates + ISO weekday
           </button>
         </div>
+        <button className="btn" onClick={() => setRepeatOpen(true)} disabled={data.legs.length === 0}>
+          Repeat week
+        </button>
         <button className="btn" onClick={() => setBulkOpen(true)} disabled={data.legs.length === 0}>
           Bulk edit
         </button>
@@ -126,6 +131,7 @@ export function SchedulePage() {
           + Add leg <span className="kbd">N</span>
         </button>
       </div>
+      {repeatOpen && <RepeatWeekDialog key={days[0]} open onOpenChange={setRepeatOpen} defaultWeek={days[0]} />}
       <BulkEditDialog open={bulkOpen} onOpenChange={setBulkOpen} shown={legs} selected={data.legs.filter((l) => selected.has(l.id))} />
       <ExportDialog open={exportOpen} onOpenChange={setExportOpen} shown={legs} selected={data.legs.filter((l) => selected.has(l.id))} />
 

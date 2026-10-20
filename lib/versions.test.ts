@@ -51,7 +51,7 @@ describe("creating versions", () => {
   });
   it("a blank version has no legs", () => {
     const { state, id } = withDraft(base(), "blank");
-    expect(state.parked[id]).toEqual({ legs: [], permits: [] });
+    expect(state.parked[id]).toEqual({ legs: [], permits: [], patterns: [] });
   });
   it("names must be present, unique ignoring case, and at most 60 characters", () => {
     const { state } = withDraft(base());
@@ -75,7 +75,7 @@ describe("switching", () => {
     expect(activeVersion(draft).id).toBe(id);
     const back = switchVersion(draft, MAIN_VERSION_ID);
     expect(back.legs).toEqual(s.legs);
-    expect(back.parked[id]).toEqual({ legs: [], permits: [] });
+    expect(back.parked[id]).toEqual({ legs: [], permits: [], patterns: [] });
     expect(Object.keys(back.parked)).toEqual([id]);
   });
   it("an unknown id or the same id changes nothing", () => {
@@ -96,7 +96,7 @@ describe("switching", () => {
     const { state, id } = withDraft(base(), "blank");
     expect(versionContent(state, MAIN_VERSION_ID).legs).toBe(state.legs);
     expect(versionContent(state, id).legs).toEqual([]);
-    expect(versionContent(state, "ghost")).toEqual({ legs: [], permits: [] });
+    expect(versionContent(state, "ghost")).toEqual({ legs: [], permits: [], patterns: [] });
   });
 });
 
@@ -172,7 +172,7 @@ describe("loading a workspace saved without versions or with damaged ones", () =
         { id: "v-b", name: "B", note: "", live: true, createdAt: "" },
       ],
       activeVersionId: "gone",
-      parked: { "v-b": { legs: [], permits: [] }, ghost: { legs: [], permits: [] } },
+      parked: { "v-b": { legs: [], permits: [], patterns: [] }, ghost: { legs: [], permits: [], patterns: [] } },
     });
     expect(fixed.versions.filter((v) => v.live)).toHaveLength(1);
     expect(fixed.activeVersionId).toBe(MAIN_VERSION_ID);
