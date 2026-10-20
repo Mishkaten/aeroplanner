@@ -23,6 +23,7 @@ export function SchedulePage() {
   const range = useDemo((s) => s.range);
   const layout = useDemo((s) => s.layout);
   const calendar = useDemo((s) => s.calendar);
+  const timeMode = useDemo((s) => s.timeMode);
   const selection = useDemo((s) => s.selection);
   const filters = useUi((s) => s.filters);
   const focusId = useUi((s) => s.focusLegId);
@@ -83,6 +84,14 @@ export function SchedulePage() {
           </button>
           <button aria-pressed={layout === "gantt"} onClick={() => useDemo.getState().setLayout("gantt")}>
             Gantt
+          </button>
+        </div>
+        <div className="seg" role="group" aria-label="Times">
+          <button aria-pressed={timeMode === "utc"} onClick={() => useDemo.getState().setTimeMode("utc")}>
+            UTC
+          </button>
+          <button aria-pressed={timeMode === "local"} onClick={() => useDemo.getState().setTimeMode("local")} title="Departure at the departure station, arrival at the arrival station, with daylight saving">
+            Local
           </button>
         </div>
         <div className="seg" role="group" aria-label="Calendar format">
@@ -195,6 +204,7 @@ export function SchedulePage() {
             days={days}
             legs={legs}
             calendar={calendar}
+            local={timeMode === "local"}
             selected={selected}
             focusId={focusId}
             focusNonce={focusNonce}

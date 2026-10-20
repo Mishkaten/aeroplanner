@@ -1,5 +1,6 @@
 import { isPlaceholder, iataOf, type AirportIndex } from "./airports";
 import { MIN, ms, utcDate, isoWeekday } from "./time";
+import { airportOffset } from "./tz";
 import type { IsoInstant, Leg } from "./types";
 
 export const fullFlight = (l: Pick<Leg, "flightNumber" | "suffix">): string => l.flightNumber + l.suffix;
@@ -40,7 +41,7 @@ export function dayTag(l: Pick<Leg, "etaUtc" | "arrIcao">, idx: AirportIndex): n
   if (isPlaceholder(l.arrIcao)) return null;
   const arr = idx.byIcao.get(l.arrIcao);
   if (!arr) return null;
-  const localMs = ms(l.etaUtc) + arr.utcOffsetMinutes * MIN;
+  const localMs = ms(l.etaUtc) + airportOffset(arr, ms(l.etaUtc)) * MIN;
   const localDate = utcDate(localMs);
   return localDate !== utcDate(l.etaUtc) ? isoWeekday(localDate) : null;
 }
@@ -49,7 +50,8 @@ export function dayTag(l: Pick<Leg, "etaUtc" | "arrIcao">, idx: AirportIndex): n
 export function localArrival(l: Pick<Leg, "etaUtc" | "arrIcao">, idx: AirportIndex): { ms: number; offsetMinutes: number } | null {
   const arr = idx.byIcao.get(l.arrIcao);
   if (!arr || isPlaceholder(l.arrIcao)) return null;
-  return { ms: ms(l.etaUtc) + arr.utcOffsetMinutes * MIN, offsetMinutes: arr.utcOffsetMinutes };
+  const offsetMinutes = airportOffset(arr, ms(l.etaUtc));
+  return { ms: ms(l.etaUtc) + offsetMinutes * MIN, offsetMinutes };
 }
 
 export function deriveLeg(l: Leg, idx: AirportIndex): LegDerived {

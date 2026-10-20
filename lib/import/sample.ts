@@ -1,6 +1,7 @@
 // The sample workbook Phasis_2026_Season.xlsx is built from the same seed data as the full demo (PRD 9),
 // with messy cell text planted on purpose: 14 flagged cells (7.7), 18 cleaned silently, 4 free notes.
 import { addDaysIso, isoWeekday, utcDate } from "../time";
+import { airportOffset } from "../tz";
 import { SEASON_START } from "../seed/legs";
 import type { DomainState, Leg } from "../types";
 import { fullFlight } from "../legs";
@@ -122,7 +123,7 @@ export function sampleSheetSpec(state: DomainState): SheetSpec {
     const v = variantOf.get(l.id);
     // A typed day tag is the ISO weekday of the local arrival date. Legs whose local date equals the UTC date
     // carry none, except the planted consistent cells (for example PHC611 URC to XIY in week 2).
-    const local = Date.parse(l.etaUtc) + idx.byIcao.get(l.arrIcao)!.utcOffsetMinutes * 60_000;
+    const local = Date.parse(l.etaUtc) + airportOffset(idx.byIcao.get(l.arrIcao)!, Date.parse(l.etaUtc)) * 60_000;
     const tag = dayTag(l, idx) ?? (v === "dayNoSpace" || v === "dayParen" ? isoWeekday(utcDate(local)) : null);
     if (tag !== null) t += v === "dayNoSpace" ? ` DAY${tag} LT` : v === "dayParen" ? ` (DAY ${tag} LT)` : ` DAY ${tag} LT`;
     if (status === "cancelled") t += " CNL";

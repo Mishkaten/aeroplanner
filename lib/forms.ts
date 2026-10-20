@@ -1,5 +1,7 @@
 // Pure validation for the Fleet registry and Company profile forms (PRD 6.7, 6.9).
 import { resolveStation, type AirportIndex } from "./airports";
+import { isValidTz, offsetAt } from "./tz";
+import { realNow } from "./clock";
 import type { Aircraft, AircraftStatus, Airport, Company, PermitRule } from "./types";
 
 /** Suggestions only: the type field takes any text. */
@@ -167,12 +169,13 @@ export interface AirportForm {
   iata: string;
   name: string;
   countryCode: string;
-  offset: string; // "+5:30", "-3", "4"
+  offset: string; // "+5:30", "-3", "4": used only when there is no time zone
+  tzId: string; // IANA zone such as "Europe/Belgrade", or empty
   lat: string;
   lon: string;
 }
 
-export const blankAirportForm = (): AirportForm => ({ icao: "", iata: "", name: "", countryCode: "", offset: "+0:00", lat: "", lon: "" });
+export const blankAirportForm = (): AirportForm => ({ icao: "", iata: "", name: "", countryCode: "", offset: "+0:00", tzId: "", lat: "", lon: "" });
 
 export function airportToForm(a: Airport): AirportForm {
   const sign = a.utcOffsetMinutes < 0 ? "-" : "+";
@@ -183,6 +186,7 @@ export function airportToForm(a: Airport): AirportForm {
     name: a.name,
     countryCode: a.countryCode,
     offset: `${sign}${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`,
+    tzId: a.tzId ?? "",
     lat: a.lat === null ? "" : String(a.lat),
     lon: a.lon === null ? "" : String(a.lon),
   };
@@ -213,7 +217,10 @@ export function validateAirport(form: AirportForm, all: Airport[], editingId: st
   if (!form.name.trim()) errors.name = "Enter the airport name";
   const cc = form.countryCode.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) errors.countryCode = "Country is a 2 letter code, for example GE";
-  const off = parseOffset(form.offset);
+  const tz = form.tzId.trim();
+  if (tz && !isValidTz(tz)) errors.tzId = "Unknown time zone. Use a name like Europe/Belgrade, or leave it empty to use the fixed offset.";
+  // With a time zone the offset is taken from it (the offset right now), so the typed offset is only checked without one.
+  const off = tz && isValidTz(tz) ? (offsetAt(tz, Date.parse(realNow())) ?? 0) : parseOffset(form.offset);
   if (off === null) errors.offset = "Use hours from UTC, for example +4 or +5:30";
   const num = (t: string, lo: number, hi: number) => (t.trim() === "" ? null : Number(t) >= lo && Number(t) <= hi ? Number(t) : ("bad" as const));
   const lat = num(form.lat, -90, 90);
@@ -223,7 +230,7 @@ export function validateAirport(form: AirportForm, all: Airport[], editingId: st
   if (Object.keys(errors).length) return { errors, value: null };
   return {
     errors,
-    value: { id: editingId ?? icao, icao, iata, name: form.name.trim(), countryCode: cc, utcOffsetMinutes: off as number, lat: lat as number | null, lon: lon as number | null, provisional: false },
+    value: { id: editingId ?? icao, icao, iata, name: form.name.trim(), countryCode: cc, utcOffsetMinutes: off as number, tzId: tz || undefined, lat: lat as number | null, lon: lon as number | null, provisional: false },
   };
 }
 

@@ -22,6 +22,7 @@ export const DEMO_RANGE: DateRange = { from: "2026-09-14", to: "2026-10-04" };
 export type RangeSel = DateRange | null; // null: automatic (three weeks from this week or the first leg)
 export type Layout = "table" | "gantt";
 export type CalendarMode = "dates" | "weekday";
+export type TimeMode = "utc" | "local";
 export type ResetKind = "full" | "empty";
 
 interface DemoStore {
@@ -32,6 +33,8 @@ interface DemoStore {
   range: RangeSel;
   layout: Layout;
   calendar: CalendarMode;
+  /** Times on the schedule: UTC, or local at each station. */
+  timeMode: TimeMode;
 
   commit: (patch: StatePatch, message: string, opts?: { silent?: boolean }) => void;
   saveLeg: (leg: Leg, isNew: boolean, permitDraft?: DraftPermit[]) => void;
@@ -50,6 +53,7 @@ interface DemoStore {
   setRange: (r: RangeSel) => void;
   setLayout: (l: Layout) => void;
   setCalendar: (c: CalendarMode) => void;
+  setTimeMode: (m: TimeMode) => void;
   dismissBanner: () => void;
   reset: (kind: ResetKind, stressLegs?: number) => void;
 }
@@ -61,6 +65,7 @@ const initial = () => ({
   range: (WORKSPACE_MODE ? null : DEMO_RANGE) as RangeSel,
   layout: "table" as Layout,
   calendar: "dates" as CalendarMode,
+  timeMode: "utc" as TimeMode,
 });
 
 function undoToast(message: string, inverse: StatePatch, apply: (p: StatePatch) => void) {
@@ -196,6 +201,7 @@ export const useDemo = create<DemoStore>()(
         setRange: (range) => set({ range }),
         setLayout: (layout) => set({ layout }),
         setCalendar: (calendar) => set({ calendar }),
+        setTimeMode: (timeMode) => set({ timeMode }),
         dismissBanner: () => set({ bannerDismissed: true }),
 
         reset: (kind, stressLegs) => {
@@ -219,6 +225,7 @@ export const useDemo = create<DemoStore>()(
         range: s.range,
         layout: s.layout,
         calendar: s.calendar,
+        timeMode: s.timeMode,
       }),
     },
   ),

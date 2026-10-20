@@ -1,6 +1,7 @@
 import { COUNTRY_NAMES, iataOf, indexAirports, isPlaceholder } from "../airports";
 import { blockMinutes, dayPlus, dayTag, fullFlight } from "../legs";
 import { MIN, iso, ms, utcDate } from "../time";
+import { airportOffset } from "../tz";
 import type { DomainState, Leg, LegType } from "../types";
 
 /** One flat line per leg. Every export format is written from these rows, so they all agree. */
@@ -54,8 +55,8 @@ export function buildRows(state: DomainState, legs: Leg[]): ExportRow[] {
     .map((l) => {
       const dep = idx.byIcao.get(l.depIcao);
       const arr = idx.byIcao.get(l.arrIcao);
-      const depOff = dep && !isPlaceholder(l.depIcao) ? dep.utcOffsetMinutes : 0;
-      const arrOff = arr && !isPlaceholder(l.arrIcao) ? arr.utcOffsetMinutes : 0;
+      const depOff = dep && !isPlaceholder(l.depIcao) ? airportOffset(dep, ms(l.etdUtc)) : 0;
+      const arrOff = arr && !isPlaceholder(l.arrIcao) ? airportOffset(arr, ms(l.etaUtc)) : 0;
       return {
         legId: l.id,
         date: utcDate(l.etdUtc),

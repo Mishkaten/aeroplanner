@@ -1,6 +1,7 @@
 import type { Airport } from "../types";
+import { defaultTzFor } from "../tzdata";
 
-// Offsets are fixed and valid for the demo range (European summer time ends 25 Oct 2026).
+// Offsets are the European summer offsets of the demo range. Each airport also has a time zone, which follows daylight saving.
 // Coordinates are approximate and used only for the schematic route map.
 const RAW: Omit<Airport, "id">[] = [
   { icao: "UGTB", iata: "TBS", name: "Tbilisi International", countryCode: "GE", utcOffsetMinutes: 240, lat: 41.669, lon: 44.955, provisional: false },
@@ -19,7 +20,12 @@ const RAW: Omit<Airport, "id">[] = [
   { icao: "XXXX", iata: "XXX", name: "Placeholder (TBD)", countryCode: "XX", utcOffsetMinutes: 0, lat: null, lon: null, provisional: true },
 ];
 
-export const SEED_AIRPORTS: Airport[] = RAW.map((a) => ({ id: a.icao, ...a }));
+const withTz = <T extends { icao: string; utcOffsetMinutes: number }>(a: T): T & { tzId?: string } => {
+  const tzId = a.icao === "XXXX" ? undefined : defaultTzFor(a.icao, a.utcOffsetMinutes);
+  return tzId ? { ...a, tzId } : a;
+};
+
+export const SEED_AIRPORTS: Airport[] = RAW.map((a) => ({ id: a.icao, ...withTz(a) }));
 
 const EXTRA: Omit<Airport, "id" | "provisional">[] = [
   { icao: "UAKK", iata: "KGF", name: "Sary-Arka Karaganda", countryCode: "KZ", utcOffsetMinutes: 300, lat: 49.671, lon: 73.334 },
@@ -44,5 +50,5 @@ const EXTRA: Omit<Airport, "id" | "provisional">[] = [
 
 /** Airports a new workspace starts with: the demo directory plus stations common on cargo routes. Fully editable. Offsets are summer offsets. */
 export function starterAirports(): Airport[] {
-  return [...SEED_AIRPORTS.map((a) => ({ ...a })), ...EXTRA.map((a) => ({ id: a.icao, ...a, provisional: false }))];
+  return [...SEED_AIRPORTS.map((a) => ({ ...a })), ...EXTRA.map((a) => ({ id: a.icao, ...withTz(a), provisional: false }))];
 }

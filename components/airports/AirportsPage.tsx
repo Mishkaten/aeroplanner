@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { COUNTRY_NAMES, formatOffset, searchAirports } from "@/lib/airports";
+import { effectiveClock } from "@/lib/clock";
+import { airportOffset, isValidTz, observesDst } from "@/lib/tz";
+import { COMMON_ZONES } from "@/lib/tzdata";
 import { airportToForm, blankAirportForm, validateAirport, type AirportForm } from "@/lib/forms";
 import { useDemo } from "@/lib/store";
 import type { Airport } from "@/lib/types";
@@ -13,6 +16,8 @@ export function AirportsPage() {
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<Airport | "new" | null>(null);
   const rows = searchAirports(data.airports, q);
+  const nowMs = Date.parse(effectiveClock(data));
+  const nowYear = new Date(nowMs).getUTCFullYear();
 
   const usedBy = (a: Airport): string | null => {
     if (a.provisional) return "The placeholder airport is built in";
@@ -27,7 +32,7 @@ export function AirportsPage() {
       <div className="head">
         <div>
           <h1>Airport directory</h1>
-          <p>ICAO and IATA codes, country and the fixed UTC offset used for local day tags (LT). Add the stations your schedule uses.</p>
+          <p>ICAO and IATA codes, country and time zone. The time zone gives the local time and the day tag (LT), and follows daylight saving. Add the stations your schedule uses.</p>
         </div>
         <span className="grow" />
         <label className="search" style={{ flex: "0 1 300px" }}>
@@ -43,7 +48,7 @@ export function AirportsPage() {
             <table className="tbl">
               <thead>
                 <tr>
-                  {["IATA", "ICAO", "Airport", "Country", "UTC offset"].map((h) => (
+                  {["IATA", "ICAO", "Airport", "Country", "Time zone", "UTC offset now"].map((h) => (
                     <th key={h} scope="col">
                       {h}
                     </th>
@@ -73,7 +78,17 @@ export function AirportsPage() {
                         )}
                       </td>
                       <td>{COUNTRY_NAMES[a.countryCode]}</td>
-                      <td className="mono">{a.provisional ? "n/a" : formatOffset(a.utcOffsetMinutes)}</td>
+                      <td className="mono" style={{ fontSize: 12 }}>{a.provisional ? "n/a" : isValidTz(a.tzId) ? a.tzId : "fixed offset"}</td>
+                      <td className="mono">
+                        {a.provisional ? (
+                          "n/a"
+                        ) : (
+                          <>
+                            {formatOffset(airportOffset(a, nowMs))}
+                            {observesDst(a, nowYear) && <small className="hint"> daylight saving</small>}
+                          </>
+                        )}
+                      </td>
                       <td style={{ whiteSpace: "nowrap" }}>
                         {!a.provisional && (
                           <>
@@ -108,7 +123,7 @@ export function AirportsPage() {
             </div>
           )}
         </section>
-        <p className="hint">Offsets are fixed: daylight saving changes are not applied. For a station that changes with the season, edit its offset when the season changes.</p>
+        <p className="hint">Stations with a time zone follow daylight saving automatically: local times, day tags and the SSIM offsets change on the right date. A station with no time zone keeps one fixed offset.</p>
       </ListGate>
       {edit && <AirportDialog key={edit === "new" ? "new" : edit.id} airport={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
     </>
@@ -154,7 +169,17 @@ function AirportDialog({ airport, onClose }: { airport: Airport | null; onClose:
           {f("iata", "IATA (3 letters)", { maxLength: 3, onChange: (e) => set({ iata: e.target.value.toUpperCase() }) })}
           <div style={{ gridColumn: "1 / -1" }}>{f("name", "Airport name")}</div>
           {f("countryCode", "Country code", { maxLength: 2, placeholder: "GE", onChange: (e) => set({ countryCode: e.target.value.toUpperCase() }) })}
-          {f("offset", "UTC offset", { placeholder: "+4" })}
+          <div className="fld">
+            <label htmlFor="ap-tzId">Time zone (IANA name)</label>
+            <input id="ap-tzId" className="inp mono" list="ap-zones" value={form.tzId} aria-invalid={!!err("tzId")} placeholder="Europe/Belgrade" onChange={(e) => set({ tzId: e.target.value })} />
+            <datalist id="ap-zones">
+              {COMMON_ZONES.map((z) => (
+                <option key={z} value={z} />
+              ))}
+            </datalist>
+            <span className="err-t">{err("tzId")}</span>
+          </div>
+          {f("offset", "Fixed UTC offset (only without a time zone)", { placeholder: "+4", disabled: isValidTz(form.tzId.trim()) })}
           {f("lat", "Latitude", { inputMode: "decimal" })}
           {f("lon", "Longitude", { inputMode: "decimal" })}
         </div>

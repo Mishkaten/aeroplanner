@@ -3,6 +3,7 @@ import { indexAirports, isPlaceholder, PLACEHOLDER_ICAO, type AirportIndex } fro
 import { makeLegId } from "../legs";
 import { newPermit, requiredPermits, type DraftPermit } from "../permits";
 import { buildTimes, isoWeekday, ms, MIN, utcDate } from "../time";
+import { airportOffset } from "../tz";
 import type { Leg, LegType, Permit, PermitRule, PermitStatus } from "../types";
 import { cleanWhitespace } from "./normalise";
 import type {
@@ -224,7 +225,7 @@ export function checkFields(f: Fields, ref: RawLine, pi: ParseIndex): ReviewFlag
   if (f.dayTag !== null && pi.dayTagMode !== "ignore" && !isPlaceholder(f.arr.icao)) {
     const built = buildTimes(ref.dateIso, depMin, arrMin);
     const airport = pi.idx.byIcao.get(f.arr.icao)!;
-    const derived = pi.dayTagMode === "departure_day" ? isoWeekday(ref.dateIso) : isoWeekday(utcDate(ms(built.etaUtc) + airport.utcOffsetMinutes * MIN));
+    const derived = pi.dayTagMode === "departure_day" ? isoWeekday(ref.dateIso) : isoWeekday(utcDate(ms(built.etaUtc) + airportOffset(airport, ms(built.etaUtc)) * MIN));
     if (derived !== f.dayTag)
       return flag("DAYTAG_MISMATCH", `DAY ${f.dayTag} LT does not match the local arrival date, which is DAY ${derived} LT.`, {
         label: `DAY ${derived} LT`,

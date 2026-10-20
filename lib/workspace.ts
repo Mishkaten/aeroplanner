@@ -9,6 +9,7 @@ import { create } from "zustand";
 import { blankWorkspaceState } from "./seed";
 import { WORKSPACE_MODE } from "./mode";
 import { useDemo } from "./store";
+import { defaultTzFor } from "./tzdata";
 import type { DomainState } from "./types";
 
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -63,7 +64,7 @@ export function normalizeData(raw: Partial<DomainState> | null | undefined): Dom
     permitRules: d.permitRules ?? [],
     company: { ...base.company, ...(d.company ?? {}) },
     aircraft: d.aircraft ?? [],
-    airports: d.airports?.length ? d.airports.map((a) => ({ ...a, id: a.id ?? a.icao })) : base.airports,
+    airports: d.airports?.length ? d.airports.map((a) => ({ ...a, id: a.id ?? a.icao, tzId: a.tzId ?? (a.provisional ? undefined : defaultTzFor(a.icao, a.utcOffsetMinutes)) })) : base.airports,
     legs: d.legs ?? [],
     permits: d.permits ?? [],
     blocks: d.blocks ?? [],

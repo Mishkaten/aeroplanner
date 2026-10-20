@@ -17,6 +17,7 @@ import {
   type LegForm,
 } from "@/lib/legform";
 import { fullFlight, isActive } from "@/lib/legs";
+import { airportOffset } from "@/lib/tz";
 import { permitKey, requiredPermits, type DraftPermit } from "@/lib/permits";
 import { resolveStation } from "@/lib/airports";
 import type { CountryCode, PermitType } from "@/lib/types";
@@ -103,9 +104,10 @@ export function LegDrawer({ mode, leg, draft, importCtx, onClose }: Props) {
     if (!times || !times.valid) return null;
     const utc = `${fmtDow(times.etaUtc)} ${fmtHHMM(times.etaUtc)}Z`;
     if (!arrAirport || isPlaceholder(arrAirport.icao)) return `Arrives ${utc}`;
-    const local = ms(times.etaUtc) + arrAirport.utcOffsetMinutes * MIN;
+    const off = airportOffset(arrAirport, ms(times.etaUtc));
+    const local = ms(times.etaUtc) + off * MIN;
     const tag = new Date(local).toISOString().slice(0, 10) !== times.etaUtc.slice(0, 10);
-    return `Arrives ${utc} | ${fmtDow(local)} ${fmtHHMM(local)} local at ${arrAirport.iata} (UTC${formatOffset(arrAirport.utcOffsetMinutes)})${tag ? ", next day locally" : ""}`;
+    return `Arrives ${utc} | ${fmtDow(local)} ${fmtHHMM(local)} local at ${arrAirport.iata} (UTC${formatOffset(off)})${tag ? ", next day locally" : ""}`;
   })();
 
   const save = () => {

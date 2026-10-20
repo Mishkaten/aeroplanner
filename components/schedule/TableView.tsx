@@ -16,6 +16,7 @@ interface Props {
   days: string[];
   legs: Leg[]; // already filtered
   calendar: "dates" | "weekday";
+  local?: boolean;
   selected: Set<string>;
   focusId: string | null;
   focusNonce: number;
@@ -26,7 +27,7 @@ interface Props {
   onMove: (legId: string, aircraftId: string, date: string) => void;
 }
 
-export function TableView({ state, d, days, legs, calendar, selected, focusId, focusNonce, onOpen, onToggleSelect, onToggleCancel, onMove }: Props) {
+export function TableView({ state, d, days, legs, calendar, local, selected, focusId, focusNonce, onOpen, onToggleSelect, onToggleCancel, onMove }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hl, setHl] = useState<string | null>(null);
 
@@ -143,6 +144,7 @@ export function TableView({ state, d, days, legs, calendar, selected, focusId, f
                             leg={l}
                             d={d}
                             reg={a.registration}
+                            local={local}
                             selected={selected.has(l.id)}
                             highlighted={hl === l.id}
                             through={d.through.groupOf.has(l.id)}

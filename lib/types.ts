@@ -48,7 +48,10 @@ export interface Airport {
   iata: string; // "TBS"
   name: string;
   countryCode: CountryCode;
-  utcOffsetMinutes: number; // fixed, no daylight saving in the demo
+  /** Fixed offset used only when the airport has no valid tzId. With a tzId the offset follows daylight saving. */
+  utcOffsetMinutes: number;
+  /** IANA time zone, for example "Europe/Belgrade". Drives local times and "DAY n LT" across daylight saving changes. */
+  tzId?: string;
   lat: number | null; // null only for the placeholder XXXX/XXX
   lon: number | null;
   provisional: boolean;

@@ -4,7 +4,8 @@ import { memo } from "react";
 import { COUNTRY_NAMES, iataOf } from "@/lib/airports";
 import type { Derived } from "@/lib/derived";
 import { blockMinutes, dayPlus, dayTag, fullFlight, localArrival } from "@/lib/legs";
-import { fmtDow, fmtDuration, fmtHHMM } from "@/lib/time";
+import { MIN, fmtDow, fmtDuration, fmtHHMM, ms, utcDate } from "@/lib/time";
+import { airportOffset } from "@/lib/tz";
 import type { Leg } from "@/lib/types";
 
 const PERMIT_TXT: Record<string, { cls: string; txt: string } | undefined> = {
@@ -44,9 +45,11 @@ interface Props {
   onToggleSelect: (id: string) => void;
   onToggleCancel: (id: string, cancel: boolean) => void;
   reg: string;
+  /** Show local times at each station instead of UTC. */
+  local?: boolean;
 }
 
-export const LegChip = memo(function LegChip({ leg, d, selected, highlighted, through, onOpen, onToggleSelect, onToggleCancel, reg }: Props) {
+export const LegChip = memo(function LegChip({ leg, d, selected, highlighted, through, onOpen, onToggleSelect, onToggleCancel, reg, local }: Props) {
   const cancelled = leg.status === "cancelled";
   const issues = cancelled ? [] : d.issuesByLeg.get(leg.id) ?? [];
   const plus = dayPlus(leg);
@@ -55,6 +58,13 @@ export const LegChip = memo(function LegChip({ leg, d, selected, highlighted, th
   const cls = ["leg", cancelled ? "cnl" : "", selected ? "sel" : "", issues.length ? "iss" : "", through ? "thru" : "", highlighted ? "hl" : ""].filter(Boolean).join(" ");
   const dep = iataOf(leg.depIcao, d.idx);
   const arr = iataOf(leg.arrIcao, d.idx);
+  // Local mode: departure at the departure station's time, arrival at the arrival station's, each with its own offset on that date.
+  const depA = d.idx.byIcao.get(leg.depIcao);
+  const arrA = d.idx.byIcao.get(leg.arrIcao);
+  const depLocal = local && depA && !depA.provisional ? ms(leg.etdUtc) + airportOffset(depA, ms(leg.etdUtc)) * MIN : null;
+  const arrLocal = local && arrA && !arrA.provisional ? ms(leg.etaUtc) + airportOffset(arrA, ms(leg.etaUtc)) * MIN : null;
+  const showLocal = depLocal !== null && arrLocal !== null;
+  const plusShown = showLocal ? (utcDate(arrLocal) > utcDate(depLocal) ? 1 : 0) : plus;
 
   return (
     <div
@@ -82,8 +92,9 @@ export const LegChip = memo(function LegChip({ leg, d, selected, highlighted, th
           {dep} &gt; {arr}
         </span>
         <span className="r2 mono strike">
-          {fmtHHMM(leg.etdUtc)} to {fmtHHMM(leg.etaUtc)}
-          {plus === 1 && <span className="plus1">(+1)</span>}
+          {showLocal ? `${fmtHHMM(depLocal)} to ${fmtHHMM(arrLocal)}` : `${fmtHHMM(leg.etdUtc)} to ${fmtHHMM(leg.etaUtc)}`}
+          {showLocal && <span className="lt"> LT</span>}
+          {plusShown === 1 && <span className="plus1">(+1)</span>}
         </span>
         <span className="r3">
           {tag !== null && <span className="lt mono">DAY {tag} LT</span>}
