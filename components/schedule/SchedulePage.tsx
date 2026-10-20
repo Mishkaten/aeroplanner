@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { derive } from "@/lib/derived";
 import { toast } from "sonner";
 import { daysBetween, filtersActive, legMatches, planMove, rangeLabel, resolveRange } from "@/lib/schedule";
@@ -10,6 +10,7 @@ import { useDemo, liveSelection } from "@/lib/store";
 import { useUi, type ScheduleFilters } from "@/lib/ui-store";
 import { ms, dateMs, DAY, fmtDow } from "@/lib/time";
 import { ListGate } from "@/components/common/ListGate";
+import { ExportDialog } from "./ExportDialog";
 import { TableView } from "./TableView";
 import { GanttView } from "./GanttView";
 
@@ -26,6 +27,7 @@ export function SchedulePage() {
   const focusId = useUi((s) => s.focusLegId);
   const focusNonce = useUi((s) => s.focusNonce);
   const d = derive(data);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const today = d.clock.slice(0, 10);
   const resolved = useMemo(() => resolveRange(range, data.legs, today), [range, data.legs, today]);
@@ -89,10 +91,14 @@ export function SchedulePage() {
             Days + dates + ISO weekday
           </button>
         </div>
+        <button className="btn" onClick={() => setExportOpen(true)} disabled={data.legs.length === 0}>
+          Export
+        </button>
         <button className="btn pri" onClick={() => useUi.getState().openNew()}>
           + Add leg <span className="kbd">N</span>
         </button>
       </div>
+      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} shown={legs} selected={data.legs.filter((l) => selected.has(l.id))} />
 
       <ListGate>
         <div className="tabs" role="tablist" aria-label="Aircraft">
